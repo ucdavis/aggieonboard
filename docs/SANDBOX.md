@@ -15,11 +15,12 @@ The app health check at `/health` verifies SQL connectivity after migrations and
 
 Try these flows:
 
-1. Sign in as Sample User, open Fetch, and page through the fixed weather records.
-2. Open Table Export and download the example CSV. Open Form to try validation.
-3. Open Notification and send either example. Read the rendered email in the local inbox linked in the quick start. Mailpit captures all recipients locally and has no relay configured.
-4. Visit `/login`, switch to Basic User, and request `/api/weatherforecast`. It returns `403` because this user lacks `SampleRole`. `/api/user/me` still returns their identity.
-5. Visit `/login` and sign out. `/api/user/me` returns `401`. The public `/about` page still opens.
+1. Sign in as Sample User and confirm the AggieOnboard home page greets them.
+2. Read any email the app sends in the local inbox linked in the quick start. Mailpit captures all recipients locally and has no relay configured.
+3. Visit `/login`, switch to Basic User, and request `/api/user/me`. It returns their identity.
+4. Visit `/login` and sign out. `/api/user/me` returns `401`.
+
+Pipeline, email, and candidate-portal flows are added here as their phases land (see [the plan](PLAN.md)).
 
 Sample User has ID `sandbox-sample`, email `sample@example.test`, IAM ID `sandbox-10001`, and roles `User` and `SampleRole`. Basic User has ID `sandbox-basic`, email `basic@example.test`, IAM ID `sandbox-10002`, and only `User`. They are fixed claims, not database user rows. Extend `LocalAuthentication.cs` when adding application roles, and `DbInitializer.cs` when adding fixtures.
 
@@ -60,11 +61,11 @@ SQL Server uses its Linux AMD64 image. On Apple Silicon, Docker Desktop needs AM
 
 ## Agent use
 
-Agents can use the host URL in the [quick start](../README.md#run-the-docker-sandbox) or join the Compose network from a browser container and visit `http://sandbox.test:8080`. The `sandbox.test` network alias avoids Chromium's automatic HTTPS upgrade for the `app` hostname. Follow the sign-in form so the browser receives a real cookie. Do not replace `/api/user/me` or the weather endpoint with mocks when verifying the sandbox.
+Agents can use the host URL in the [quick start](../README.md#run-the-docker-sandbox) or join the Compose network from a browser container and visit `http://sandbox.test:8080`. The `sandbox.test` network alias avoids Chromium's automatic HTTPS upgrade for the `app` hostname. Follow the sign-in form so the browser receives a real cookie. Do not replace `/api/user/me` or other API endpoints with mocks when verifying the sandbox.
 
 Useful commands inside the app and database containers:
 
 ```bash
 docker compose -p "$SANDBOX_PROJECT" -f .devcontainer/docker-compose.sandbox.yml exec app curl --fail http://localhost:8080/health
-docker compose -p "$SANDBOX_PROJECT" -f .devcontainer/docker-compose.sandbox.yml exec sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'SandboxOnly123!' -C -d SandboxDb -Q 'SELECT * FROM WeatherForecasts ORDER BY Date'
+docker compose -p "$SANDBOX_PROJECT" -f .devcontainer/docker-compose.sandbox.yml exec sql /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'SandboxOnly123!' -C -d SandboxDb -Q 'SELECT name FROM sys.tables ORDER BY name'
 ```

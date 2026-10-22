@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Server.Core.Data;
-using Server.Core.Domain;
 
 public interface IDbInitializer
 {
@@ -35,30 +34,9 @@ public class DbInitializer : IDbInitializer
         }
     }
 
-    private async Task SeedDevelopmentAsync(CancellationToken ct)
-    {
-        if (!await _db.WeatherForecasts.AnyAsync(ct))
-        {
-            // Fixed dates make fresh sandboxes reproducible for screenshots and investigation.
-            var firstDate = new DateOnly(2025, 1, 1);
-            var forecasts = new[]
-            {
-                new WeatherForecast { Date = firstDate.AddDays(0), TemperatureC = 18, Summary = "Cool" },
-                new WeatherForecast { Date = firstDate.AddDays(1), TemperatureC = 22, Summary = "Mild" },
-                new WeatherForecast { Date = firstDate.AddDays(2), TemperatureC = 35, Summary = "Hot" },
-                new WeatherForecast { Date = firstDate.AddDays(3), TemperatureC = 15, Summary = "Chilly" },
-                new WeatherForecast { Date = firstDate.AddDays(4), TemperatureC = 8, Summary = "Freezing" },
-                new WeatherForecast { Date = firstDate.AddDays(5), TemperatureC = 25, Summary = "Warm" },
-                new WeatherForecast { Date = firstDate.AddDays(6), TemperatureC = 28, Summary = "Balmy" },
-                new WeatherForecast { Date = firstDate.AddDays(7), TemperatureC = 12, Summary = "Cold" },
-                new WeatherForecast { Date = firstDate.AddDays(8), TemperatureC = 32, Summary = "Scorching" },
-                new WeatherForecast { Date = firstDate.AddDays(9), TemperatureC = 20, Summary = "Pleasant" }
-            };
-
-            _db.WeatherForecasts.AddRange(forecasts);
-            await _db.SaveChangesAsync(ct);
-        }
-    }
+    // Fictional candidates arrive in Phase 1 (docs/PLAN.md); never seed real candidate records.
+    private Task SeedDevelopmentAsync(CancellationToken ct)
+        => Task.CompletedTask;
 
     // just a placeholder for any production-safe seeding
     private Task SeedProductionSafeAsync(CancellationToken ct)

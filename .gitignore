@@ -51,3 +51,7 @@ output/playwright/
 
 # publish artifacts
 publish/
+
+# Source documents (communications audit, rewritten TA/SSO messages). Kept locally: the audit
+# screenshots show real emails. Message wording is seeded into the app from these in Phase 1.
+Reference/

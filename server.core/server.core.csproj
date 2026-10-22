@@ -16,6 +16,9 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
     <PackageReference Include="Mjml.Net" Version="4.11.0" />
     <PackageReference Include="Razor.Templating.Core" Version="3.1.0" />
+    <!-- MailKit resolves Pkcs 10.0.0 transitively (GHSA-846f-f764-76mx). Pin the patched build
+         until MailKit's own dependency moves past it. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
 </Project>
