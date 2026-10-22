@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-22 — Phase 0 done locally (two commits on the template history). GitHub repo not yet created. Next: Phase 1.**
+> **STATUS 2026-10-22 — Phase 0 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 1.**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
