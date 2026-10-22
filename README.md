@@ -1,6 +1,8 @@
-# Web App Template
+# AggieOnboard
 
-A full-stack web application template featuring a .NET 10 backend with React/Vite frontend, using OIDC authentication with Microsoft Entra ID by default.
+Guides UC Davis Health candidates through onboarding, from reference check to New Employee Welcome. Staff work a candidate pipeline and send each step's approved message; candidates follow one checklist in a portal reached by emailed link. See [the plan](docs/PLAN.md) for scope, phases, and open questions, and [AGENTS.md](AGENTS.md) for the invariants.
+
+Built on [`ucdavis/web-app-template`](https://github.com/ucdavis/web-app-template): a .NET 10 backend with React/Vite frontend, using OIDC authentication with Microsoft Entra ID by default. The rest of this README is the template's setup guide.
 
 ## Architecture
 
@@ -24,9 +26,9 @@ docker compose -p "$SANDBOX_PROJECT" -f .devcontainer/docker-compose.sandbox.yml
 
 Use a distinct `SANDBOX_PROJECT` for every checkout and different app and inbox ports for sandboxes running concurrently. Keep these same values for every command that manages this sandbox, including in a new terminal. Compose rejects an unset or empty `SANDBOX_PROJECT`. See [multiple sandboxes](docs/SANDBOX.md#ports-and-multiple-sandboxes) for a second worktree example.
 
-Open [the sandbox](http://localhost:5280) and choose **Sign in as Sample User**. The image builds the current checkout's React app and .NET server. SQL Server starts first, then the app applies migrations and seeds ten weather records dated January 1–10, 2025. No host Node, .NET, `.env`, Entra registration, or SMTP account is needed. The first build needs internet access to download images and dependencies.
+Open [the sandbox](http://localhost:5280) and choose **Sign in as Sample User**. The image builds the current checkout's React app and .NET server. SQL Server starts first, then the app applies migrations and seeds development fixtures (fictional candidates arrive in Phase 1). No host Node, .NET, `.env`, Entra registration, or SMTP account is needed. The first build needs internet access to download images and dependencies.
 
-The [local inbox](http://localhost:8025) captures mail from the Notification page. Use **Basic User** at [local sign-in](http://localhost:5280/login) to test the weather API's `403` response, or sign out there. These fictional users have fixed identities and claims; the template does not have a user table.
+The [local inbox](http://localhost:8025) captures mail the app sends. Use [local sign-in](http://localhost:5280/login) to switch users or sign out. These fictional users have fixed identities and claims; the template does not have a user table.
 
 Restarting preserves database changes. To return to the original fixtures, remove this sandbox's containers and volumes, then start it again:
 
@@ -42,8 +44,8 @@ This deletes the sandbox database and local sign-in keys. It does not affect the
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/ucdavis/web-app-template/
-   cd web-app-template
+   git clone https://github.com/ucdavis/aggieonboard/
+   cd aggieonboard
    ```
 
 2. **Configure authentication before starting**
@@ -137,7 +139,7 @@ In development, the frontend runs from **http://localhost:5173** and proxies bac
 
 The backend requires a SQL Server connection string.
 
-Startup always applies migrations. Sample weather data is inserted only when `DevelopmentData__SeedOnStartup=true`, and only if the weather table is empty. The Docker sandbox sets this flag. For ordinary development, opt in through `server/.env` when you want the sample records.
+Startup always applies migrations. Fictional development fixtures are inserted only when `DevelopmentData__SeedOnStartup=true`, and only into empty tables. The Docker sandbox sets this flag. For ordinary development, opt in through `server/.env` when you want the sample records.
 
 - Outside DevContainer, the default development connection points to the SQL Server container published on `localhost:14333`.
 - Inside DevContainer, `devcontainer.json` overrides `DB_CONNECTION` to use the internal Docker hostname `sql:1433`.

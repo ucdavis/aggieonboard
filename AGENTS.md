@@ -1,5 +1,60 @@
 # Agent instructions
 
+## AggieOnboard: read this before the template guidance below
+
+AggieOnboard guides UC Davis Health candidates through onboarding, from "you're a top candidate"
+(reference check) to New Employee Welcome: 14 steps across Talent Acquisition, SSO, and L&D.
+Staff work a candidate pipeline and send each step's approved message from the app; candidates
+follow one checklist in a portal they reach by emailed magic link.
+
+This is a **greenfield prototype** on the template, and currently the owner's own POC.
+**The plan is [`docs/PLAN.md`](docs/PLAN.md)**: step catalog, domain model, phases, open questions.
+Update its STATUS header as phases land. The source documents (the communications audit and the
+rewritten TA/SSO messages) are in `Reference/`, which is gitignored. Do not commit them.
+
+### The process is still moving
+
+The audit lists ~30 unanswered questions for TA, SSO, and vendors ("48 business hours": from when?
+clearance six business days before start? representative age rule? Wednesday I-9 hours?). Build so
+their answers are data changes, not releases: anything the audit marks unconfirmed is a setting
+with the document's value as the default. When a step's behavior depends on an unanswered question,
+say so in a code comment that names the step number.
+
+Sequencing is vertical slices, demo-able early, not JDWriter's bottom-up port. There is no POC to
+reach parity with.
+
+### Invariants
+
+1. **No sensitive identity data.** No SSN, birth date, driver's license, address history, or uploaded
+   transcripts/licenses. Those stay in the vendor systems (DocuSign, Universal, I-9 Tracker). The app
+   holds name, email, position, dates, and statuses. Changing this needs an explicit decision recorded
+   in `docs/PLAN.md`, not a feature request.
+2. **A candidate session sees exactly one candidate.** Every portal query filters by the session's
+   candidate ID, never one from the URL or body. Tests prove cross-candidate reads and writes fail.
+3. **Magic-link tokens are stored hashed, single-use, and expiring.** "Send me a new link" responds
+   identically whether or not the email is on file, and is rate-limited.
+4. **Staff and candidate auth never mix.** Staff use Entra (the template's scheme) with roles from
+   the staff whitelist; candidates use a separate cookie scheme. `/api/staff/*` and `/api/portal/*`
+   are guarded by separate policies.
+5. **Unconfirmed process facts are settings, never constants** (see above).
+6. **No message is sent with an unfilled merge field.** Preview shows the gaps and Send is disabled.
+7. **Sent messages are logged as rendered** (subject, HTML, text, template version) so "what did we
+   tell them" always has an answer.
+8. **Copy belongs to communications.** Message templates are seeded verbatim from the TA/SSO document
+   and edited in the app. Do not reword, tighten, or "improve" them in code.
+9. **Fictional data only.** No real candidate records in dev, test, fixtures, or the repo.
+
+### Local environment
+
+SQL Server 2022 is amd64-only. On Apple Silicon it runs only under **Rosetta** (Docker Desktop
+setting, or Colima `--vm-type vz --vz-rosetta`); under QEMU it aborts at startup. jdwriter-app's
+`docs/RUNNING-LOCALLY.md` has the setup and a check.
+
+Several template files have CRLF or mixed line endings. Avoid end-of-line anchors (`$`) in
+`sed` edits; they silently fail to match.
+
+## Template guidance
+
 This is a full-stack web application template using modern React and .NET technologies. Please follow these guidelines when generating code suggestions.
 
 ## Pull requests
