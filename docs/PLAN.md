@@ -186,7 +186,8 @@ calendar, staff user management.
 **Phase 7: Pilot readiness.** Accessibility pass, `/security-review`, and Azure deploy via the template's
 GitHub Actions + Bicep. These need **user-only prerequisites**: a new Entra app registration (not
 JDWriter's), Azure resources, an approved SMTP relay and sender address able to email external
-candidates, and data-classification sign-off.
+candidates, and data-classification sign-off. Then set the repository variable `DEPLOY_TEST_ON_PUSH=true` to
+turn on the automatic test deploy that `ci-cd.yml` runs on pushes to main.
 
 ## Verification
 

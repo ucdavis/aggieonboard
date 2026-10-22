@@ -80,7 +80,9 @@ jobs:
 
   deploy_test:
     name: Deploy test
-    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # Off until Azure is bootstrapped (docs/PLAN.md, Phase 7): set the repository variable
+    # DEPLOY_TEST_ON_PUSH=true once the test environment's variables exist.
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_TEST_ON_PUSH == 'true' }}
     uses: ./.github/workflows/deploy-azure-appservice.yml
     permissions:
       contents: read
