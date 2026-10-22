@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-22 — Phases 0–1 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 2 (staff slice).**
+> **STATUS 2026-10-22 — Phases 0–2 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 3 (communications).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -129,7 +129,7 @@ Built in Phase 1 (`server.core/Domain/`). Enums are stored as their names.
 - **Holiday**: UC Davis observed holidays, Nov 2026 – Sep 2027 (dates.ucdavis.edu). Extend yearly.
 
 Later phases add: **CandidateResponse** (5), **SentMessage** (3), **CandidateAccessToken** (4),
-**AuditEvent** (2).
+**AuditEvent** (2, built: every staff change, shown as the candidate's history).
 
 ### Deadline rules
 
@@ -209,7 +209,9 @@ settings, and contacts; seed ~8 fictional candidates spread across the journey (
 one overdue, one remote I-9, one with all conditional flags). Build `BusinessCalendar` and the
 deadline rules with unit tests.
 
-**Phase 2: Staff slice.** Whitelist roles, pipeline table, candidate detail, step status changes,
+**Phase 2: Staff slice.** ✅ 2026-10-22: done as planned, plus create/edit candidate with qualifications. The
+sandbox's Sample User is a whitelisted onboarding specialist and admin; Basic User is not staff. Demo verified on the
+sandbox: a candidate with every requirement walked from step 1 to 15. Planned: whitelist roles, pipeline table, candidate detail, step status changes,
 condition flags (add/skip steps), and audit events. Return 404 for unknown `/api/*` paths: the template's SPA
 fallback currently answers them with `index.html` and a 200. *Demo: move a candidate from step 1 to 15 by hand.*
 

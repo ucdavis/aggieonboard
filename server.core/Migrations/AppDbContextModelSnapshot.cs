@@ -54,6 +54,47 @@ namespace server.core.Migrations
                     b.ToTable("Settings");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.AuditEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ActorName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("ActorStaffId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("At")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("CandidateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Detail")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorStaffId");
+
+                    b.HasIndex("CandidateId", "At");
+
+                    b.ToTable("AuditEvents");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.Candidate", b =>
                 {
                     b.Property<int>("Id")
@@ -340,6 +381,9 @@ namespace server.core.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -440,6 +484,19 @@ namespace server.core.Migrations
                         .IsUnique();
 
                     b.ToTable("StepDefinitions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AuditEvent", b =>
+                {
+                    b.HasOne("Server.Core.Domain.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("ActorStaffId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Server.Core.Domain.Candidate", null)
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Server.Core.Domain.Candidate", b =>

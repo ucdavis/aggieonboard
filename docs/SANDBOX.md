@@ -15,10 +15,14 @@ The app health check at `/health` verifies SQL connectivity after migrations and
 
 Try these flows:
 
-1. Sign in as Sample User and confirm the AggieOnboard home page greets them.
-2. Read any email the app sends in the local inbox linked in the quick start. Mailpit captures all recipients locally and has no relay configured.
-3. Visit `/login`, switch to Basic User, and request `/api/user/me`. It returns their identity.
-4. Visit `/login` and sign out. `/api/user/me` returns `401`.
+1. Sign in as Sample User, a whitelisted onboarding specialist and admin. The pipeline lists eight fictional candidates; Taylor Nguyen is overdue. **My candidates** shows Morgan Chen and Riley Johnson.
+2. Open a candidate. Start, complete, block or reopen steps; change a due date; add a staff note. Each change appears under History.
+3. Use **New candidate**, or **Edit details** on a candidate, and toggle a requirement such as Drug screen to watch its step appear or be skipped.
+4. Read any email the app sends in the local inbox linked in the quick start. Mailpit captures all recipients locally and has no relay configured.
+5. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
+6. Visit `/login` and sign out. `/api/user/me` returns `401`.
+
+Fixtures are seeded only into an empty database. After a schema or fixture change, reset with `down --volumes` (below).
 
 Pipeline, email, and candidate-portal flows are added here as their phases land (see [the plan](PLAN.md)).
 

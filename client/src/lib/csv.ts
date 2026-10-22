@@ -96,7 +96,9 @@ export function toCsv<T>(
   options?: CsvOptions
 ): string {
   const lineEnding = options?.lineEnding ?? '\n';
-  const headers = columns.map((column) => escapeCsvValue(column.header)).join(',');
+  const headers = columns
+    .map((column) => escapeCsvValue(column.header))
+    .join(',');
   const dataRows = rows.map((row) =>
     columns
       .map((column) =>

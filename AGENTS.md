@@ -53,6 +53,14 @@ reach parity with.
 - Date maths: `server.core/Scheduling/`. Every business-day or business-hour calculation goes through
   `BusinessCalendar`, in Pacific time.
 - Merge fields: the closed list in `server.core/Messaging/MergeFields.cs`.
+- Staff operations: `server.core/Journey/JourneyService.cs`, one method per change, each writing an
+  `AuditEvent`. The HTTP layer is `server/Controllers/Staff/` (`/api/staff/*`, role `Staff`). A rule
+  violation is `JourneyRuleException` (→ 409 with a message written for staff); bad input is
+  `JourneyValidationException` (→ 400 with field errors the client puts on the matching fields).
+- Allowed step moves live in one table, `CandidateJourney.AllowedFrom`. The API returns each step's
+  `availableActions` from it, and the UI shows exactly those buttons. Don't duplicate the rules client-side.
+- Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
+  sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what
   is missing. `DevelopmentSeeder` (fictional fixtures) runs only with `DevelopmentData__SeedOnStartup=true`.
 

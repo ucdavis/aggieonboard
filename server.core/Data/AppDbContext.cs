@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<StaffMember> Staff => Set<StaffMember>();
     public DbSet<Candidate> Candidates => Set<Candidate>();
     public DbSet<CandidateStep> CandidateSteps => Set<CandidateStep>();
+    public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -117,6 +118,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Step).WithMany().HasForeignKey(x => x.StepDefinitionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CompletedBy).WithMany().HasForeignKey(x => x.CompletedById).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.StaffNote).HasMaxLength(2000);
+        });
+
+        modelBuilder.Entity<AuditEvent>(e =>
+        {
+            e.HasIndex(x => new { x.CandidateId, x.At });
+            e.Property(x => x.ActorName).HasMaxLength(NameLen);
+            e.Property(x => x.Action).HasMaxLength(KeyLen);
+            e.Property(x => x.Detail).HasMaxLength(2000);
+            e.HasOne<Candidate>().WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<StaffMember>().WithMany().HasForeignKey(x => x.ActorStaffId).OnDelete(DeleteBehavior.Restrict);
         });
 
         base.OnModelCreating(modelBuilder);

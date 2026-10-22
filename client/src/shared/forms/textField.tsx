@@ -5,9 +5,14 @@ import { useId } from 'react';
 interface TextFieldProps {
   label: string;
   placeholder?: string;
+  type?: 'date' | 'email' | 'text';
 }
 
-export function TextField({ label, placeholder }: TextFieldProps) {
+export function TextField({
+  label,
+  placeholder,
+  type = 'text',
+}: TextFieldProps) {
   const controlId = useId();
   const field = useFieldContext<string>();
   const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -25,7 +30,7 @@ export function TextField({ label, placeholder }: TextFieldProps) {
         onBlur={field.handleBlur}
         onChange={(e) => field.handleChange(e.target.value)}
         placeholder={placeholder ?? `Enter ${label.toLowerCase()}`}
-        type="text"
+        type={type}
         value={field.state.value}
       />
     </FieldWrapper>

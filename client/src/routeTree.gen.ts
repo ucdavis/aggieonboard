@@ -11,6 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route'
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
+import { Route as authenticatedCandidatesNewRouteImport } from './routes/(authenticated)/candidates/new'
+import { Route as authenticatedCandidatesCandidateIdIndexRouteImport } from './routes/(authenticated)/candidates/$candidateId/index'
+import { Route as authenticatedCandidatesCandidateIdEditRouteImport } from './routes/(authenticated)/candidates/$candidateId/edit'
 
 const authenticatedRouteRoute = authenticatedRouteRouteImport.update({
   id: '/(authenticated)',
@@ -21,24 +24,65 @@ const authenticatedIndexRoute = authenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => authenticatedRouteRoute,
 } as any)
+const authenticatedCandidatesNewRoute =
+  authenticatedCandidatesNewRouteImport.update({
+    id: '/candidates/new',
+    path: '/candidates/new',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
+const authenticatedCandidatesCandidateIdIndexRoute =
+  authenticatedCandidatesCandidateIdIndexRouteImport.update({
+    id: '/candidates/$candidateId/',
+    path: '/candidates/$candidateId/',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
+const authenticatedCandidatesCandidateIdEditRoute =
+  authenticatedCandidatesCandidateIdEditRouteImport.update({
+    id: '/candidates/$candidateId/edit',
+    path: '/candidates/$candidateId/edit',
+    getParentRoute: () => authenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof authenticatedIndexRoute
+  '/candidates/new': typeof authenticatedCandidatesNewRoute
+  '/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute
+  '/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof authenticatedIndexRoute
+  '/candidates/new': typeof authenticatedCandidatesNewRoute
+  '/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute
+  '/candidates/$candidateId': typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(authenticated)': typeof authenticatedRouteRouteWithChildren
   '/(authenticated)/': typeof authenticatedIndexRoute
+  '/(authenticated)/candidates/new': typeof authenticatedCandidatesNewRoute
+  '/(authenticated)/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute
+  '/(authenticated)/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/candidates/new'
+    | '/candidates/$candidateId/edit'
+    | '/candidates/$candidateId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/(authenticated)' | '/(authenticated)/'
+  to:
+    | '/'
+    | '/candidates/new'
+    | '/candidates/$candidateId/edit'
+    | '/candidates/$candidateId'
+  id:
+    | '__root__'
+    | '/(authenticated)'
+    | '/(authenticated)/'
+    | '/(authenticated)/candidates/new'
+    | '/(authenticated)/candidates/$candidateId/edit'
+    | '/(authenticated)/candidates/$candidateId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -61,15 +105,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof authenticatedIndexRouteImport
       parentRoute: typeof authenticatedRouteRoute
     }
+    '/(authenticated)/candidates/new': {
+      id: '/(authenticated)/candidates/new'
+      path: '/candidates/new'
+      fullPath: '/candidates/new'
+      preLoaderRoute: typeof authenticatedCandidatesNewRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/candidates/$candidateId/': {
+      id: '/(authenticated)/candidates/$candidateId/'
+      path: '/candidates/$candidateId'
+      fullPath: '/candidates/$candidateId/'
+      preLoaderRoute: typeof authenticatedCandidatesCandidateIdIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
+    '/(authenticated)/candidates/$candidateId/edit': {
+      id: '/(authenticated)/candidates/$candidateId/edit'
+      path: '/candidates/$candidateId/edit'
+      fullPath: '/candidates/$candidateId/edit'
+      preLoaderRoute: typeof authenticatedCandidatesCandidateIdEditRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
   }
 }
 
 interface authenticatedRouteRouteChildren {
   authenticatedIndexRoute: typeof authenticatedIndexRoute
+  authenticatedCandidatesNewRoute: typeof authenticatedCandidatesNewRoute
+  authenticatedCandidatesCandidateIdEditRoute: typeof authenticatedCandidatesCandidateIdEditRoute
+  authenticatedCandidatesCandidateIdIndexRoute: typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedIndexRoute: authenticatedIndexRoute,
+  authenticatedCandidatesNewRoute: authenticatedCandidatesNewRoute,
+  authenticatedCandidatesCandidateIdEditRoute:
+    authenticatedCandidatesCandidateIdEditRoute,
+  authenticatedCandidatesCandidateIdIndexRoute:
+    authenticatedCandidatesCandidateIdIndexRoute,
 }
 
 const authenticatedRouteRouteWithChildren =

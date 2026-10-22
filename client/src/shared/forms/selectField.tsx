@@ -3,12 +3,19 @@ import { FieldWrapper } from './fieldWrapper.tsx';
 import { useId } from 'react';
 
 interface SelectFieldProps {
+  /** When set, "no choice" is a valid answer with this label, instead of a disabled placeholder. */
+  emptyLabel?: string;
   label: string;
   options: Array<{ label: string; value: string }>;
   placeholder?: string;
 }
 
-export function SelectField({ label, options, placeholder }: SelectFieldProps) {
+export function SelectField({
+  emptyLabel,
+  label,
+  options,
+  placeholder,
+}: SelectFieldProps) {
   const controlId = useId();
   const field = useFieldContext<string>();
   const hasError = field.state.meta.isTouched && !field.state.meta.isValid;
@@ -27,9 +34,13 @@ export function SelectField({ label, options, placeholder }: SelectFieldProps) {
         onChange={(e) => field.handleChange(e.target.value)}
         value={field.state.value || ''}
       >
-        <option disabled value="">
-          {placeholder ?? `Pick a ${label.toLowerCase()}`}
-        </option>
+        {emptyLabel ? (
+          <option value="">{emptyLabel}</option>
+        ) : (
+          <option disabled value="">
+            {placeholder ?? `Pick a ${label.toLowerCase()}`}
+          </option>
+        )}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

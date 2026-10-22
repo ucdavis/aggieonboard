@@ -25,8 +25,30 @@ public static class DevelopmentSeeder
         [SettingKeys.FingerprintSchedulingUrl] = "https://example.test/fingerprinting",
     };
 
+    /// <summary>
+    /// The sandbox's "Sample User" sign-in (server/Helpers/LocalAuthentication.cs), whitelisted as
+    /// an onboarding specialist and admin. "Basic User" is left off on purpose: it shows the
+    /// signed-in-but-not-staff screen.
+    /// </summary>
+    public const string SandboxStaffEmail = "sample@example.test";
+
     public static async Task SeedAsync(AppDbContext db, DateTimeOffset now, CancellationToken ct = default)
     {
+        // Added on its own so an existing sandbox database picks it up too.
+        var sandboxStaff = await db.Staff.SingleOrDefaultAsync(s => s.Email == SandboxStaffEmail, ct);
+        if (sandboxStaff is null)
+        {
+            sandboxStaff = new StaffMember
+            {
+                Name = "Sample User",
+                Email = SandboxStaffEmail,
+                Role = StaffRole.OnboardingSpecialist,
+                IsAdmin = true,
+            };
+            db.Staff.Add(sandboxStaff);
+            await db.SaveChangesAsync(ct);
+        }
+
         if (await db.Candidates.AnyAsync(ct)) return;
 
         foreach (var setting in await db.Settings.Where(s => s.Value == null).ToListAsync(ct))
@@ -93,7 +115,7 @@ public static class DevelopmentSeeder
             .Active("employee-data", daysAgo: 8, due: calendar.AddBusinessDays(today, -3));
 
         // 5. Early pre-employment, with a drug screen.
-        var morgan = New("Morgan", "Chen", "Respiratory Therapist", "Respiratory Care", specialist);
+        var morgan = New("Morgan", "Chen", "Respiratory Therapist", "Respiratory Care", sandboxStaff);
         morgan.AnticipatedStartDate = StartIn(4);
         morgan.RequiresDrugScreen = true;
         morgan.Qualifications.Add(License("Respiratory Care Practitioner (California)", "A copy of your active RCP license"));
@@ -101,7 +123,7 @@ public static class DevelopmentSeeder
             .Active("background-check", daysAgo: 1).Active("employee-health", daysAgo: 1).Active("drug-screen", daysAgo: 1);
 
         // 6. Every conditional requirement, remote I-9.
-        var casey = New("Casey", "Brooks", "Security Officer", "Police and Security Services", specialist2);
+        var casey = New("Casey", "Brooks", "Security Officer", "Police and Security Services", specialist);
         casey.AnticipatedStartDate = StartIn(3);
         casey.RequiresDrugScreen = true;
         casey.RequiresDmvPullNotice = true;
@@ -119,7 +141,7 @@ public static class DevelopmentSeeder
             .Done("parking", 6);
 
         // 7. Cleared; finishing before-first-day items.
-        var riley = New("Riley", "Johnson", "Medical Assistant", "Primary Care Network", specialist);
+        var riley = New("Riley", "Johnson", "Medical Assistant", "Primary Care Network", sandboxStaff);
         riley.AnticipatedStartDate = StartIn(2);
         riley.EmployeeId = "SBX-0007";
         riley.HiringManagerContact = "Morgan Ellis at morgan.ellis@example.test";

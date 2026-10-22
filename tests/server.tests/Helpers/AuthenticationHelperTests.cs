@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Server.Core.Data;
+using Server.Core.Domain;
 using Server.Helpers;
 using Server.Services;
 
@@ -36,6 +38,57 @@ public class AuthenticationHelperTests : IDisposable
         services.AddAuthenticationServices(configuration, new TestEnvironment());
         _provider = services.BuildServiceProvider();
         _scope = _provider.CreateScope();
+
+        // The test principal's email is on the whitelist; roles come from this row.
+        Db.Staff.Add(new StaffMember { Name = "Sample User", Email = "sample@example.test", Role = StaffRole.OnboardingSpecialist });
+        Db.SaveChanges();
+    }
+
+    private AppDbContext Db => _scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    [Fact]
+    public async Task An_account_not_on_the_staff_whitelist_gets_no_roles()
+    {
+        var principal = CreatePrincipal(email: "someone.else@ucdavis.edu");
+        ((ClaimsIdentity)principal.Identity!).AddClaim(new Claim(ClaimTypes.Role, "DirectoryRole"));
+
+        var signedIn = await ValidateToken(principal);
+
+        signedIn.FindAll(ClaimTypes.Role).Should().BeEmpty();
+        signedIn.Identity!.Name.Should().Be("Sample User");
+    }
+
+    [Fact]
+    public async Task Deactivating_a_staff_member_removes_their_roles_at_the_next_request()
+    {
+        var signedIn = await ValidateToken(CreatePrincipal());
+        Db.Staff.Single().IsActive = false;
+        await Db.SaveChangesAsync();
+
+        var cookie = await ValidateCookie(signedIn);
+
+        cookie.Principal!.FindAll(ClaimTypes.Role).Should().BeEmpty();
+        cookie.ShouldRenew.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Admins_also_get_the_admin_role()
+    {
+        Db.Staff.Single().IsAdmin = true;
+        await Db.SaveChangesAsync();
+
+        var signedIn = await ValidateToken(CreatePrincipal());
+
+        signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
+            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist", "Admin");
+    }
+
+    [Fact]
+    public async Task Whitelist_emails_match_regardless_of_case()
+    {
+        var signedIn = await ValidateToken(CreatePrincipal(email: "Sample@Example.TEST"));
+
+        signedIn.IsInRole("Staff").Should().BeTrue();
     }
 
     [Theory]
@@ -53,15 +106,15 @@ public class AuthenticationHelperTests : IDisposable
         var cookie = await ValidateCookie(signedIn);
 
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("User", "SampleRole");
+            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist");
         signedIn.Identity!.Name.Should().Be("Sample User");
         cookie.Principal.Should().BeSameAs(signedIn);
         cookie.ShouldRenew.Should().BeFalse();
     }
 
     [Theory]
-    [InlineData("User", "RemovedRole")]
-    [InlineData("User", "User")]
+    [InlineData("Staff", "RemovedRole")]
+    [InlineData("Staff", "Staff")]
     public async Task Cookie_validation_replaces_stale_or_duplicate_roles(string firstRole, string secondRole)
     {
         var principal = CreatePrincipal();
@@ -72,7 +125,7 @@ public class AuthenticationHelperTests : IDisposable
         var cookie = await ValidateCookie(principal);
 
         cookie.Principal!.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("User", "SampleRole");
+            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist");
         cookie.Principal.Identity!.Name.Should().Be("Sample User");
         cookie.Principal.FindFirst("ucdPersonIAMID")!.Value.Should().Be("sandbox-10001");
         cookie.ShouldRenew.Should().BeTrue();
@@ -123,7 +176,7 @@ public class AuthenticationHelperTests : IDisposable
         updatedSecondary.FindFirst("department")!.Value.Should().Be("Example department");
         updatedSecondary.FindAll(ClaimTypes.Role).Should().BeEmpty();
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("User", "SampleRole");
+            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist");
         principal.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
             .Should().Equal("DirectoryRole", "OldRole");
     }
@@ -136,8 +189,8 @@ public class AuthenticationHelperTests : IDisposable
     public async Task Role_updates_honor_each_identity_role_claim_type(bool validateCookie, string primaryRoleClaimType)
     {
         var primary = new ClaimsIdentity(CreatePrincipal().Claims, "OpenIdConnect", "name", primaryRoleClaimType);
-        primary.AddClaim(new Claim(primaryRoleClaimType, "User"));
-        primary.AddClaim(new Claim(primaryRoleClaimType, "SampleRole"));
+        primary.AddClaim(new Claim(primaryRoleClaimType, "Staff"));
+        primary.AddClaim(new Claim(primaryRoleClaimType, "OnboardingSpecialist"));
         var secondary = new ClaimsIdentity(
             [new Claim("secondary-role", "StaleRole"), new Claim("department", "Example department")],
             "AdditionalIdentity", "name", "secondary-role");
@@ -157,19 +210,20 @@ public class AuthenticationHelperTests : IDisposable
         }
 
         updated.IsInRole("StaleRole").Should().BeFalse();
-        updated.IsInRole("User").Should().BeTrue();
-        updated.IsInRole("SampleRole").Should().BeTrue();
+        updated.IsInRole("Staff").Should().BeTrue();
+        updated.IsInRole("OnboardingSpecialist").Should().BeTrue();
         updated.Identities.First().RoleClaimType.Should().Be(primaryRoleClaimType);
         updated.Identities.Last().RoleClaimType.Should().Be("secondary-role");
         updated.FindFirst("department")!.Value.Should().Be("Example department");
         principal.IsInRole("StaleRole").Should().BeTrue();
     }
 
-    private static ClaimsPrincipal CreatePrincipal(string? userId = "sample-user")
+    private static ClaimsPrincipal CreatePrincipal(string? userId = "sample-user", string email = "sample@example.test")
     {
         var claims = new List<Claim>
         {
             new("name", "Sample User"),
+            new("preferred_username", email),
             new("ucdPersonIAMID", "sandbox-10001"),
         };
         if (userId != null)

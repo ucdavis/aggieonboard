@@ -1,11 +1,16 @@
 using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
+using Server.Core.Domain;
 
 namespace Server.Services;
 
 public interface IUserService
 {
     Task<ClaimsPrincipal?> UpdateUserPrincipalIfNeeded(ClaimsPrincipal principal);
+
+    /// <summary>The active staff member this sign-in belongs to, or null for anyone not on the whitelist.</summary>
+    Task<StaffMember?> GetStaffMemberAsync(ClaimsPrincipal principal, CancellationToken ct = default);
 }
 
 public class UserService : IUserService
@@ -19,12 +24,37 @@ public class UserService : IUserService
         _dbContext = dbContext;
     }
 
-    private async Task<List<string>> GetRolesForUser(string userId)
-    {
-        // fake role strings but use _dbContext to get real roles later
-        var roles = new List<string> { "User", "SampleRole" };
+    /// <summary>
+    /// The sign-in email: Entra's <c>preferred_username</c> (the UC Davis login), falling back to
+    /// an email claim. The sandbox personas carry <c>preferred_username</c> too.
+    /// </summary>
+    public static string? EmailOf(ClaimsPrincipal principal) =>
+        principal.FindFirst("preferred_username")?.Value
+        ?? principal.FindFirst(ClaimTypes.Email)?.Value
+        ?? principal.FindFirst("email")?.Value;
 
-        return await Task.FromResult(roles);
+    public async Task<StaffMember?> GetStaffMemberAsync(ClaimsPrincipal principal, CancellationToken ct = default)
+    {
+        var email = EmailOf(principal)?.Trim();
+        if (string.IsNullOrEmpty(email)) return null;
+
+        // Emails are compared case-insensitively: Entra may report "NDLewis@ucdavis.edu".
+        var normalized = email.ToLowerInvariant();
+        return await _dbContext.Staff.SingleOrDefaultAsync(s => s.IsActive && s.Email.ToLower() == normalized, ct);
+    }
+
+    /// <summary>
+    /// Staff roles come from the whitelist on every request, so deactivating someone takes effect
+    /// at once. Anyone not on it gets no roles: signed in, but unable to use the staff app.
+    /// </summary>
+    private async Task<List<string>> GetRolesForUser(ClaimsPrincipal principal)
+    {
+        var staff = await GetStaffMemberAsync(principal);
+        if (staff is null) return [];
+
+        var roles = new List<string> { AppRoles.Staff, staff.Role.ToString() };
+        if (staff.IsAdmin) roles.Add(AppRoles.Admin);
+        return roles;
     }
 
     public async Task<ClaimsPrincipal?> UpdateUserPrincipalIfNeeded(ClaimsPrincipal principal)
@@ -38,7 +68,7 @@ public class UserService : IUserService
 
         // get user's roles
         // might want to cache w/ IMemoryCache to avoid DB hits on every request, but we'll skip that for simplicity
-        var currentRoles = await GetRolesForUser(userId);
+        var currentRoles = await GetRolesForUser(principal);
 
         // compare roles to existing claims, only update if different
         var existingRoles = principal.Identities

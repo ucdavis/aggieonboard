@@ -117,6 +117,22 @@ public class SeedingTests
         await DevelopmentSeeder.SeedAsync(db, Now.AddDays(1));
 
         (await db.Candidates.CountAsync()).Should().Be(8);
-        (await db.Staff.CountAsync()).Should().Be(5);
+        (await db.Staff.CountAsync()).Should().Be(6);
+    }
+
+    [Fact]
+    public async Task The_sandbox_sign_in_is_whitelisted_even_in_an_existing_database()
+    {
+        await using var db = TestDbContextFactory.CreateInMemory();
+        await ReferenceDataSeeder.SeedAsync(db, Now);
+        await DevelopmentSeeder.SeedAsync(db, Now);
+        db.Staff.Remove(await db.Staff.SingleAsync(s => s.Email == DevelopmentSeeder.SandboxStaffEmail));
+        await db.SaveChangesAsync();
+
+        await DevelopmentSeeder.SeedAsync(db, Now);
+
+        var staff = await db.Staff.SingleAsync(s => s.Email == DevelopmentSeeder.SandboxStaffEmail);
+        staff.IsAdmin.Should().BeTrue();
+        staff.Role.Should().Be(StaffRole.OnboardingSpecialist);
     }
 }

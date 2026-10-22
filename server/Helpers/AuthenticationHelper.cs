@@ -28,6 +28,8 @@ public static class AuthenticationHelper
                 {
                     options.Cookie.Name = cookieName;
                     options.LoginPath = "/login";
+                    // Sandbox personas get their roles from the staff whitelist, exactly as Entra sign-ins do.
+                    options.Events.OnValidatePrincipal = OnValidatePrincipal;
                     options.Events.OnRedirectToLogin = ctx =>
                     {
                         if (ctx.Request.Path.StartsWithSegments("/api"))

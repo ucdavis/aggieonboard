@@ -1,9 +1,11 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Server.Core.Data;
+using Server.Core.Journey;
 using Server.Core.Notification;
 using Server.Helpers;
 using Server.Services;
@@ -35,7 +37,9 @@ try
     // Use Entra by default; the Docker sandbox explicitly enables local cookies.
     builder.Services.AddAuthenticationServices(builder.Configuration, builder.Environment);
 
-    builder.Services.AddControllersWithViews();
+    // Enums travel as their names ("ActionNeeded"), in both directions.
+    builder.Services.AddControllersWithViews()
+        .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
     builder.Services.AddNotificationServices(builder.Configuration);
 
     // Add response caching for pages that opt-in
@@ -45,6 +49,8 @@ try
     // add scoped services here
     builder.Services.AddScoped<IDbInitializer, DbInitializer>();
     builder.Services.AddScoped<IUserService, UserService>();
+    builder.Services.AddSingleton(TimeProvider.System);
+    builder.Services.AddScoped<JourneyService>();
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)
@@ -167,6 +173,8 @@ try
         NoStore = false,
     });
 
+    // An unknown API path is a 404, not the SPA's index.html: a mistyped endpoint should fail loudly.
+    app.MapFallback("/api/{**path}", () => Results.NotFound());
     app.MapFallbackToFile("/index.html", staticFileOptions);
 
     app.Logger.LogInformation("Startup complete. Listening on {Urls}", string.Join(", ", app.Urls));

@@ -14,8 +14,7 @@ import {
 } from '@tanstack/react-table';
 
 type TableActionsRenderer<TData extends object> =
-  | ReactNode
-  | ((table: Table<TData>) => ReactNode);
+  ReactNode | ((table: Table<TData>) => ReactNode);
 
 interface DataTableProps<TData extends object> {
   columns: ColumnDef<TData>[];
