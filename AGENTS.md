@@ -41,8 +41,25 @@ reach parity with.
 7. **Sent messages are logged as rendered** (subject, HTML, text, template version) so "what did we
    tell them" always has an answer.
 8. **Copy belongs to communications.** Message templates are seeded verbatim from the TA/SSO document
-   and edited in the app. Do not reword, tighten, or "improve" them in code.
+   (`server.core/Seed/Messages/*.md`) and edited in the app. Do not reword, tighten, or "improve"
+   them in code — not even the drafting artifacts listed under *Copy to review* in the plan.
 9. **Fictional data only.** No real candidate records in dev, test, fixtures, or the repo.
+
+### Where things are
+
+- Domain: `server.core/Domain/`. Steps and messages are separate (the plan explains why); a step
+  names its messages by key.
+- Step moves: `server.core/Journey/CandidateJourney.cs`. Seeds and the app use the same moves.
+- Date maths: `server.core/Scheduling/`. Every business-day or business-hour calculation goes through
+  `BusinessCalendar`, in Pacific time.
+- Merge fields: the closed list in `server.core/Messaging/MergeFields.cs`.
+- Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what
+  is missing. `DevelopmentSeeder` (fictional fixtures) runs only with `DevelopmentData__SeedOnStartup=true`.
+
+EF design-time commands need the app to start without Entra:
+
+    Auth__UseLocal=true DB_CONNECTION="Server=localhost,14333;Database=Design;User ID=sa;Password=x;Encrypt=False;TrustServerCertificate=True;" \
+      dotnet ef migrations add <Name> -p server.core -s server
 
 ### Local environment
 

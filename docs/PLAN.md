@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-22 — Phase 0 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 1.**
+> **STATUS 2026-10-22 — Phases 0–1 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 2 (staff slice).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -40,69 +40,110 @@ Unconfirmed process facts become settings, not code, so SSO/TA answers do not ne
 
 ---
 
-## The journey (step catalog)
+## The journey: steps and messages
 
-Seeded from the two documents. **Sender** says who sends the email: *App* means we send it; *External*
-means a vendor sends it and the portal shows a "watch for this email" card instead.
+Built in Phase 1. Source of truth: `server.core/Seed/JourneyCatalog.cs` (steps, settings,
+holidays) and `server.core/Seed/Messages/*.md` (messages).
 
-| # | Step | Owner | Email | Candidate does | Condition |
-|---|---|---|---|---|---|
-| 1 | Reference check introduced | RA | App | Enter 3+ references in SkillSurvey within 2 working days | — |
-| 2 | SkillSurvey request | SkillSurvey | External | Use personalized link | — |
-| 3 | Reference check completed | RA | **None** (removed in audit) | — | Portal status update fills the gap the audit worried about |
-| 4 | Qualification verification | RA | App | Send listed license/cert/degree docs by deadline via approved method | Per-position requirement list |
-| 5 | Qualification documents received | RA | App, **auto** on staff marking #4 received | Nothing | Audit asked for exactly this |
-| 6 | Offer | Recruiter / TAM | External (TAM portal) | Accept/decline in jobs portal | Milestone only |
-| 7 | Employee Data Gathering Form | Recruiter (TBC) | App | Complete DocuSign form by deadline | — |
-| 8 | Universal background check | Universal | External | Complete within 48 hours | — |
-| 9 | SSO welcome & clearance | Onboarding specialist | App | OEHC form now; overview of drug screen + background | Drug-screen section if required |
-| 10 | Quest drug screen | Quest | External | Test within 48 business hours | Drug screen required |
-| 11A | I-9 choice | Onboarding specialist | App | Section 1 in I-9 Tracker; **choose in-person (Wednesday slot) or remote in portal** | — |
-| 11B | Remote I-9 | Onboarding specialist | App | **Enter representative name + email in portal** | Chose remote |
-| 12 | Conditional requirements | Onboarding specialist | App, sections per flag | DMV pull notice / fingerprinting (enter appointment + ATI number in portal) / sign PD / parking | DMV, Live Scan, PD, parking flags |
-| 13 | Final clearance | Onboarding specialist | App | DocuSign paperwork, claim accounts, privacy training | — |
-| 14 | New Employee Welcome | L&D | External | Attend within 30 days | — |
+**Steps and messages are separate**, because they don't line up one to one. A *step* is
+something tracked: staff advance it and the portal lists it. A *message* is something sent. Message
+12 covers four steps; the qualification step has a request (4) and an acknowledgment (5); and
+SkillSurvey, Universal and Quest send their own email for a step. Each step names its messages by
+key: `RequestMessageKey` (sending it activates the step), `AcknowledgmentMessageKey`, and
+`VendorMessageKey` (communications' proposed wording for the vendor, kept but never sent). Audit #3
+("reference check completed") is not a message; it is step 1 turning Complete in the portal.
 
-Two portal wins come directly from the audit. **11A/11B and 12 currently ask the candidate to "reply to this email"**
-with a choice, a representative's contact, an appointment time, or an ATI number. The portal turns
-those into small forms whose answers land on the staff record. **#7's need, "can staff see whether the form was completed
-before sending another request?"**, is answered by step status.
+| # | Step key | Audit | Owner | Messages | Watch for | Condition | Deadline (✱ = unconfirmed) |
+|---|---|---|---|---|---|---|---|
+| 1 | `references` | 1–3 | RA | 1 · vendor 2 | SkillSurvey | — | 2 business days after activation ✱ |
+| 2 | `qualifications` | 4–5 | RA | 4 · ack 5 | — | has qualifications | staff-entered ✱ |
+| 3 | `offer` | 6 | Recruiter | — | jobs application portal | — | none |
+| 4 | `employee-data` | 7 | Recruiter | 7 | DocuSign | — | staff-entered ✱ |
+| 5 | `background-check` | 8 | OS | vendor 8 | Universal | — | 48 clock hours ✱ |
+| 6 | `employee-health` | 9 | OS | 9 | — | — | clearance ✱ |
+| 7 | `drug-screen` | 10 | OS | vendor 10 | Quest (noreply@questdiagnostics.com) | drug screen | 48 business hours ✱ |
+| 8 | `i9` | 11A | OS | 11A | I-9 Tracker Complete | — | clearance ✱ |
+| 9 | `i9-remote` | 11B | OS | 11B | I-9 Tracker Complete | chose remote | clearance ✱ |
+| 10 | `dmv` | 12 | OS | 12 (section) | DocuSign | DMV | staff-entered |
+| 11 | `fingerprinting` | 12 | OS | 12 (section) | — | Live Scan | clearance ✱ |
+| 12 | `position-description` | 12 | OS | 12 (section) | DocuSign | PD | staff-entered |
+| 13 | `parking` | 12 | OS | 12 (section) | — | parking | none |
+| 14 | `cleared` | 13 | OS | 13 | DocuSign | — | day before start ✱ |
+| 15 | `new-employee-welcome` | 14 | L&D | — | Learning and Development | — | 30 days after start |
+
+*Clearance* = start date − `ClearanceBusinessDaysBeforeStart` (default 6) business days.
+
+Two portal wins come straight from the audit (Phase 5). **11A, 11B and 12 ask the candidate to "reply to this
+email"** with a choice, a representative's contact, an appointment time or an ATI number; the
+portal turns those into small forms. **#7's need, "can staff see whether the form was completed
+before sending another request?"**, is answered by step status. The copy still says "reply", so
+updating it is a communications decision (see *Copy to review*).
+
+### Message files
+
+Each message is Markdown with front matter (`key`, `audit`, `sender`, `subject`). Merge fields are
+`{{Field}}` from the closed list in `server.core/Messaging/MergeFields.cs`. A conditional run is
+wrapped in `<!-- if: Condition -->` … `<!-- end -->` (message 4's license/degree lists, message 12's
+four requirements). The files were generated from the TA/SSO document by cutting each message
+out and swapping only its `[placeholders]` for merge fields; tests fail if an app message
+still contains a bracketed placeholder or names an unknown field. Vendor messages (2, 8, 10) keep
+their original brackets, since the app never fills them. Placeholders that stood for links became
+Markdown links using the placeholder's own words (`[OEHC appointment/request form](…)`,
+`[Schedule fingerprinting appointment](…)`). Message 7's bare `[Link]` became `[Link](…)`.
+
+Not carried over, because they are notes rather than copy: #3 ("Remove?"), #6's internal SharePoint/Box
+links, #13's "What changes" commentary, and #14's Box link.
+
+### Copy to review
+
+Seeded verbatim. These look like drafting artifacts, but changing them is your call:
+
+- **4**: "Please let me know if you have any questions.Questions? Contact {{RecruitingAssistantContact}}." The sentence is doubled and has no space after the period.
+- **7**: the form link's text is just "Link". Accessible link text would name the form.
+- **11B**: the paragraph "The supplied remote template requires a representative over 18…" reads like a
+  note about the source template and repeats the previous paragraph. A lone "." follows the last link.
+- **11A / 11B / 12**: "reply to this email" instructions will need updating once the portal collects those answers (Phase 5).
 
 ---
 
 ## Domain model (normalized SQL, EF Core — same approach as JDWriter)
 
-- **Candidate**: name, preferred first name, email, position title, department, anticipated start
-  date, employee ID (set at #13), assigned RA / recruiter / onboarding specialist, archived flag.
-- **CandidateRequirement**: the condition flags (drug screen, DMV, Live Scan, PD, parking) plus the
-  list of required licenses/certifications/degrees for #4. Toggling a flag adds or skips steps.
-- **StepDefinition** (seeded, admin-editable): key, order, phase (TA / SSO / L&D), owner role,
-  sender (App/External), external sender name + from-address + subject (for "watch for" cards),
-  condition, deadline rule, candidate-facing instructions, "what happens next" text, dependencies.
-- **CandidateStep**: one per candidate per applicable step. Status
-  `Upcoming → ActionNeeded → Waiting (submitted / with vendor) → Complete`, plus `Skipped` and `Blocked`.
-  Due date, completed at/by, internal staff note.
-- **CandidateResponse**: typed portal answers (I-9 choice + slot, representative name/email,
-  fingerprint appointment, ATI number), timestamped, visible on the staff record.
-- **MessageTemplate** (versioned): subject + body with merge fields (`{{FirstName}}`,
-  `{{PositionTitle}}`, `{{ClearanceDeadline}}`…), converted from the doc's `[First name]` placeholders.
-- **SentMessage**: recipient, template version, rendered subject/HTML/text, sender, timestamp.
-- **Settings / Contact / Holiday**: deadline values, contacts per role, Wednesday I-9 hours and
-  address, UC holiday calendar for business-day math.
-- **StaffUser** (whitelist + role, as JDWriter did): `Admin`, `RecruitingAssistant`, `Recruiter`,
-  `OnboardingSpecialist`.
-- **CandidateAccessToken**: SHA-256 hash, candidate, expiry, consumed-at.
-- **AuditEvent**: who changed which step/flag/template, when.
+Built in Phase 1 (`server.core/Domain/`). Enums are stored as their names.
 
-### Deadline rules (configurable, because the audit hasn't confirmed them)
+- **StepDefinition**: key, order, audit reference, title, phase, owner role, condition, message
+  keys, deadline rule (owned: anchor, amount, unit), `DeadlineConfirmed` + `DeadlineQuestion`,
+  and "watch for" sender / from address / subject.
+- **MessageTemplate** (`Key` + `Version` unique; edits add versions) with ordered
+  **MessageTemplateSection**s (condition + Markdown body). Sender is App or External.
+- **Candidate**: name, email, position, department, hiring-manager contact, anticipated start date,
+  employee ID, assigned RA / recruiter / onboarding specialist, requirement flags (drug screen,
+  DMV, fingerprinting, PD, parking), I-9 method, and **CandidateQualification**s (license /
+  certification / degree + document to submit). `Meets(condition)` decides steps and sections.
+- **CandidateStep**: status (`Upcoming → ActionNeeded → Waiting → Complete`, plus `Skipped`,
+  `Blocked`), activated at, due date + optional due time (Pacific), `DueOverridden`, completed
+  at/by, staff note. Moves go through `server.core/Journey/CandidateJourney.cs`, which the seeds
+  use too, so fixtures are always reachable states.
+- **StaffMember**: name, email, phone, role, active. Phase 2 makes it the sign-in whitelist.
+- **AppSetting**: key, value (null = unanswered, which blocks messages that need it), kind,
+  description, confirmed flag, open question.
+- **Holiday**: UC Davis observed holidays, Nov 2026 – Sep 2027 (dates.ucdavis.edu). Extend yearly.
 
-- `TriggerPlus(n, BusinessDays | Hours | BusinessHours)` → e.g. #1 = 2 working days, #8 = 48 hours, #10 = 48 business hours.
-- `StartDateMinus(n, BusinessDays)` → clearance deadline = start − 6 business days (#9, #12).
-- `StartDateMinus(n, Weeks)` → OEHC appointment ≥ 2 weeks before start.
-- `None` / staff-entered → #4, #7 until TA/SSO confirm.
+Later phases add: **CandidateResponse** (5), **SentMessage** (3), **CandidateAccessToken** (4),
+**AuditEvent** (2).
 
-One `BusinessCalendar` service does all date math against the holiday table and is unit-tested at
-the edge cases: Friday triggers, holidays, start dates on Mondays, and "48 business hours" starting mid-day.
+### Deadline rules
+
+`DeadlineRule(Anchor, Amount, Unit)`: anchors `None` (staff enter the date), `Activation`,
+`Clearance`, `BeforeStart`, `AfterStart`; units `Hours`, `BusinessHours`, `CalendarDays`,
+`BusinessDays`, `Weeks`. One `BusinessCalendar` (weekends + holidays, Pacific time) does all date
+maths. Choices made where the audit is silent, all tested:
+
+- Business days never count the activation day itself; the due date is the end of the nth business day.
+- "Business hours" = a clock that runs only on business days (24 h each). Whether SSO means office
+  hours instead is open (audit #8, #10). A start on a weekend or holiday waits for the next business day.
+- Clock hours are real elapsed time, so a daylight-saving change is counted correctly.
+- A deadline landing exactly on midnight reads as the end of the day before; due times are kept to the minute.
+- Staff can override any due date, and recomputation leaves an override alone.
 
 ---
 
@@ -157,18 +198,20 @@ the edge cases: Friday triggers, holidays, start dates on Mondays, and "48 busin
 
 ## Phases
 
-**Phase 0: Repo from the template.** Create `ucdavis/aggieonboard` from the template, commit the
+**Phase 0: Repo from the template.** ✅ 2026-10-22. Create `ucdavis/aggieonboard` from the template, commit the
 cleaned template first (README.customization §8: remove weather/showcase), rename the identity and
 cookie, and confirm the Docker sandbox runs. On Apple Silicon, SQL Server needs Rosetta (see
 jdwriter-app `docs/RUNNING-LOCALLY.md`). Write AGENTS.md with the invariants above.
 
-**Phase 1: Domain and seed.** Schema and migration; seed the step catalog, 14 templates (from doc 2),
+**Phase 1: Domain and seed.** ✅ 2026-10-22: 15 steps, 12 messages, 7 settings, 14 holidays, 5 staff and 8
+candidates; `InitialCreate` verified on SQL Server in the sandbox. Planned: schema and migration; seed the step catalog, the templates (from doc 2),
 settings, and contacts; seed ~8 fictional candidates spread across the journey (one at each phase,
 one overdue, one remote I-9, one with all conditional flags). Build `BusinessCalendar` and the
 deadline rules with unit tests.
 
 **Phase 2: Staff slice.** Whitelist roles, pipeline table, candidate detail, step status changes,
-condition flags (add/skip steps), and audit events. *Demo: move a candidate from #1 to #14 by hand.*
+condition flags (add/skip steps), and audit events. Return 404 for unknown `/api/*` paths: the template's SPA
+fallback currently answers them with `index.html` and a 200. *Demo: move a candidate from step 1 to 15 by hand.*
 
 **Phase 3: Communications.** Template rendering, preview with missing-field detection, send via
 SMTP→Mailpit, the SentMessage log, and the auto-acknowledgment for #5. *Demo: the full journey in the Mailpit inbox.*

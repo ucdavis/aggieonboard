@@ -12,6 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The communications audit's messages, seeded verbatim (Seed/JourneyCatalog.cs). -->
+    <EmbeddedResource Include="Seed\Messages\*.md" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="MailKit" Version="4.16.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
     <PackageReference Include="Mjml.Net" Version="4.11.0" />
