@@ -20,7 +20,7 @@ public static class DevelopmentSeeder
         [SettingKeys.ReferenceSurveyBusinessDays] = "5",
         [SettingKeys.QualificationSubmissionMethod] = "the secure upload link from your recruiting assistant (sandbox placeholder)",
         [SettingKeys.EmployeeDataFormUrl] = "https://example.test/employee-data-form",
-        [SettingKeys.EmployeeDataFormContact] = "Chris Alvarez at chris.alvarez@example.test",
+        [SettingKeys.EmployeeDataFormContact] = "chris.alvarez@example.test",
         [SettingKeys.OehcFormUrl] = "https://example.test/oehc-appointment-request",
         [SettingKeys.FingerprintSchedulingUrl] = "https://example.test/fingerprinting",
     };

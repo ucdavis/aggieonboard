@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import type {
   CandidateDetail,
+  MessagePreview,
   PipelineRow,
   StepDetail,
 } from '@/queries/staff.ts';
@@ -43,6 +44,7 @@ export const pipelineRow = (
 });
 
 export const step = (overrides: Partial<StepDetail> = {}): StepDetail => ({
+  acknowledgmentMessageKey: null,
   activatedAt: null,
   auditReference: '1–3',
   availableActions: ['Activate', 'Complete', 'Block'],
@@ -60,9 +62,11 @@ export const step = (overrides: Partial<StepDetail> = {}): StepDetail => ({
   order: 1,
   owner: 'RecruitingAssistant',
   phase: 'TalentAcquisition',
+  requestMessageKey: 'references-request',
   staffNote: null,
   status: 'Upcoming',
   title: 'Reference check',
+  vendorMessageKey: 'skillsurvey-request',
   watchForSender: 'SkillSurvey',
   ...overrides,
 });
@@ -94,6 +98,7 @@ export const candidate = (
     parking: false,
     positionDescription: false,
   },
+  sentMessages: [],
   steps: [
     step(),
     step({
@@ -104,10 +109,32 @@ export const candidate = (
       order: 7,
       owner: 'OnboardingSpecialist',
       phase: 'PreEmployment',
+      requestMessageKey: null,
       status: 'Skipped',
       title: 'Drug screen',
+      vendorMessageKey: 'quest-request',
       watchForSender: 'Quest Diagnostics',
     }),
   ],
+  ...overrides,
+});
+
+export const messagePreview = (
+  overrides: Partial<MessagePreview> = {}
+): MessagePreview => ({
+  auditReference: '1',
+  blockers: [],
+  canSend: true,
+  html: '<html><body><p>Hi Alex,</p></body></html>',
+  key: 'references-request',
+  missing: [],
+  replyTo: 'sample@example.test',
+  sender: 'App',
+  startsSteps: ['Reference check'],
+  subject: 'Next step for Clinical Nurse II: Complete your reference check',
+  templateVersion: 1,
+  text: 'Hi Alex,',
+  timesSent: 0,
+  to: 'alex.rivera@example.test',
   ...overrides,
 });

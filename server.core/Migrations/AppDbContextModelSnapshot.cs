@@ -365,6 +365,77 @@ namespace server.core.Migrations
                     b.ToTable("MessageTemplateSections", (string)null);
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.SentMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuditReference")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("Automatic")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Html")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MessageKey")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("MessageTemplateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReplyTo")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("SentByName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("SentByStaffId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ToAddress")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageTemplateId");
+
+                    b.HasIndex("SentByStaffId");
+
+                    b.HasIndex("CandidateId", "SentAt");
+
+                    b.ToTable("SentMessages");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.StaffMember", b =>
                 {
                     b.Property<int>("Id")
@@ -565,6 +636,28 @@ namespace server.core.Migrations
                         .HasForeignKey("MessageTemplateId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.SentMessage", b =>
+                {
+                    b.HasOne("Server.Core.Domain.Candidate", null)
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.MessageTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("MessageTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.StaffMember", null)
+                        .WithMany()
+                        .HasForeignKey("SentByStaffId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Template");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.StepDefinition", b =>

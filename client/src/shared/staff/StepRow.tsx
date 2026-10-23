@@ -15,6 +15,7 @@ import {
   useStepDue,
   useStepNote,
 } from '@/queries/staff.ts';
+import { MessagePreviewDialog } from './MessageDialogs.tsx';
 
 const actionStyle: Record<StepAction, string> = {
   Activate: 'btn-primary',
@@ -37,11 +38,16 @@ export function StepRow({
   const due = useStepDue(candidateId);
   const note = useStepNote(candidateId);
   const [editing, setEditing] = useState<'due' | 'note' | null>(null);
+  const [previewing, setPreviewing] = useState<string | null>(null);
+  const [sentNotice, setSentNotice] = useState<string | null>(null);
   const error = action.error ?? due.error ?? note.error;
+  // Reported by the server after a move with a side effect (message 5), or after a send from here.
+  const notice = sentNotice ?? action.data?.notice ?? null;
   const skipped = step.status === 'Skipped';
   const headingId = useId();
 
   const reset = () => {
+    setSentNotice(null);
     action.reset();
     due.reset();
     note.reset();
@@ -123,6 +129,33 @@ export function StepRow({
           {errorMessage(error)}
         </div>
       )}
+      {notice && !error && (
+        <div
+          className={`alert mt-3 py-2 text-sm ${
+            notice.includes('not sent') ? 'alert-warning' : 'alert-info'
+          }`}
+          role="status"
+        >
+          {notice}
+        </div>
+      )}
+      {step.acknowledgmentMessageKey && step.status === 'ActionNeeded' && (
+        <p className="mt-3 text-xs text-base-content/60">
+          “Candidate done” emails the candidate an acknowledgment that their
+          documents arrived.
+        </p>
+      )}
+      {previewing && (
+        <MessagePreviewDialog
+          candidateId={candidateId}
+          messageKey={previewing}
+          onClose={() => setPreviewing(null)}
+          onSent={(text) => {
+            setPreviewing(null);
+            setSentNotice(text);
+          }}
+        />
+      )}
 
       {editing === 'due' && (
         <DueEditor
@@ -189,6 +222,30 @@ export function StepRow({
           >
             {step.staffNote ? 'Edit note' : 'Add note'}
           </button>
+          {step.requestMessageKey && (
+            <button
+              className="btn btn-sm btn-secondary btn-outline"
+              onClick={() => {
+                reset();
+                setPreviewing(step.requestMessageKey);
+              }}
+              type="button"
+            >
+              Preview message
+            </button>
+          )}
+          {step.vendorMessageKey && (
+            <button
+              className="btn btn-sm btn-ghost"
+              onClick={() => {
+                reset();
+                setPreviewing(step.vendorMessageKey);
+              }}
+              type="button"
+            >
+              Vendor&apos;s wording
+            </button>
+          )}
         </div>
       )}
     </li>

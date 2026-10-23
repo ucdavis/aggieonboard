@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Server.Core.Domain;
 using Server.Core.Journey;
+using Server.Core.Messaging;
 
 namespace Server.Controllers.Staff;
 
@@ -19,8 +20,9 @@ public abstract class StaffControllerBase : ControllerBase
 }
 
 /// <summary>
-/// A move the journey's rules refuse is a 409 with the reason; invalid candidate details are a 400
-/// with field errors in the standard validation-problem shape.
+/// A move the journey's rules refuse (or a message that cannot be sent yet) is a 409 with the
+/// reason; an email server failure is a 502; invalid candidate details are a 400 with field errors
+/// in the standard validation-problem shape.
 /// </summary>
 public sealed class JourneyErrorsAttribute : ExceptionFilterAttribute
 {
@@ -35,6 +37,17 @@ public sealed class JourneyErrorsAttribute : ExceptionFilterAttribute
                     Title = "That change isn't allowed.",
                     Detail = rule.Message,
                 });
+                context.ExceptionHandled = true;
+                break;
+
+            case MessageDeliveryException delivery:
+                context.Result = new ObjectResult(new ProblemDetails
+                {
+                    Status = StatusCodes.Status502BadGateway,
+                    Title = "The message could not be sent.",
+                    Detail = $"{delivery.Message} Nothing was recorded as sent; try again.",
+                })
+                { StatusCode = StatusCodes.Status502BadGateway };
                 context.ExceptionHandled = true;
                 break;
 

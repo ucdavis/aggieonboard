@@ -20,7 +20,7 @@ services:
       Smtp__Username: sandbox
       Smtp__Password: sandbox
       Smtp__FromEmail: no-reply@example.test
-      Smtp__FromName: Template sandbox
+      Smtp__FromName: UC Davis Health
       Notification__BaseUrl: http://localhost:${SANDBOX_PORT:-5280}
     ports:
       - "127.0.0.1:${SANDBOX_PORT:-5280}:8080"

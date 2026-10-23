@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Candidate> Candidates => Set<Candidate>();
     public DbSet<CandidateStep> CandidateSteps => Set<CandidateStep>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<SentMessage> SentMessages => Set<SentMessage>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -82,7 +83,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Name).HasMaxLength(NameLen);
             e.Property(x => x.Email).HasMaxLength(EmailLen);
             e.Property(x => x.Phone).HasMaxLength(40);
-            e.Ignore(x => x.ContactLine);
+            e.Ignore(x => x.ContactDetails);
         });
 
         modelBuilder.Entity<Candidate>(e =>
@@ -128,6 +129,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.Detail).HasMaxLength(2000);
             e.HasOne<Candidate>().WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<StaffMember>().WithMany().HasForeignKey(x => x.ActorStaffId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<SentMessage>(e =>
+        {
+            e.HasIndex(x => new { x.CandidateId, x.SentAt });
+            e.Property(x => x.MessageKey).HasMaxLength(KeyLen);
+            e.Property(x => x.AuditReference).HasMaxLength(20);
+            e.Property(x => x.ToAddress).HasMaxLength(EmailLen);
+            e.Property(x => x.ReplyTo).HasMaxLength(EmailLen);
+            e.Property(x => x.Subject).HasMaxLength(500);
+            e.Property(x => x.SentByName).HasMaxLength(NameLen);
+            e.HasOne<Candidate>().WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Template).WithMany().HasForeignKey(x => x.MessageTemplateId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<StaffMember>().WithMany().HasForeignKey(x => x.SentByStaffId).OnDelete(DeleteBehavior.Restrict);
         });
 
         base.OnModelCreating(modelBuilder);

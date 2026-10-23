@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-22 — Phases 0–2 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 3 (communications).**
+> **STATUS 2026-10-22 — Phases 0–3 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 4 (candidate portal).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -128,7 +128,7 @@ Built in Phase 1 (`server.core/Domain/`). Enums are stored as their names.
   description, confirmed flag, open question.
 - **Holiday**: UC Davis observed holidays, Nov 2026 – Sep 2027 (dates.ucdavis.edu). Extend yearly.
 
-Later phases add: **CandidateResponse** (5), **SentMessage** (3), **CandidateAccessToken** (4),
+Later phases add: **CandidateResponse** (5), **SentMessage** (3, built: subject, HTML and text as sent, template version, sender, automatic flag), **CandidateAccessToken** (4),
 **AuditEvent** (2, built: every staff change, shown as the candidate's history).
 
 ### Deadline rules
@@ -215,7 +215,12 @@ sandbox: a candidate with every requirement walked from step 1 to 15. Planned: w
 condition flags (add/skip steps), and audit events. Return 404 for unknown `/api/*` paths: the template's SPA
 fallback currently answers them with `index.html` and a 200. *Demo: move a candidate from step 1 to 15 by hand.*
 
-**Phase 3: Communications.** Template rendering, preview with missing-field detection, send via
+**Phase 3: Communications.** ✅ 2026-10-22. Messages render from Markdown (Markdig, raw HTML off, every value
+escaped) into their own MJML layout: "UC Davis Health", no "do not reply" footer, Reply-To the sending staff member,
+From name "UC Davis Health". Sending a request message starts the steps it asks for; delivery happens first, so a
+refused send records nothing. "Candidate done" on qualifications sends message 5, or says why it could not.
+Contact fields are the email ("or" phone) because the copy reads "Contact me at [contact]". Verified on the sandbox:
+messages 9 and 5 delivered to Mailpit. Planned: template rendering, preview with missing-field detection, send via
 SMTP→Mailpit, the SentMessage log, and the auto-acknowledgment for #5. *Demo: the full journey in the Mailpit inbox.*
 
 **Phase 4: Candidate portal (read).** Candidate auth scheme, magic links in every email, the portal

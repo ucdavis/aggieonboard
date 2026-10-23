@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { useState } from 'react';
 import { HttpError } from '@/lib/api.ts';
 import {
   formatDate,
@@ -12,6 +13,7 @@ import {
   type CandidateDetail,
   type JourneyPhase,
 } from '@/queries/staff.ts';
+import { SentMessageDialog } from '@/shared/staff/MessageDialogs.tsx';
 import { StepRow } from '@/shared/staff/StepRow.tsx';
 
 export const Route = createFileRoute(
@@ -42,6 +44,7 @@ function CandidatePage() {
     error,
     isPending,
   } = useQuery(candidateQueryOptions(id));
+  const [viewing, setViewing] = useState<number | null>(null);
 
   if (isPending) {
     return (
@@ -175,6 +178,41 @@ function CandidatePage() {
               )}
             </div>
           </section>
+
+          <section className="card bg-base-100 shadow-sm">
+            <div className="card-body gap-3 text-sm">
+              <h2 className="card-title text-base">Messages sent</h2>
+              {candidate.sentMessages.length ? (
+                <ol className="space-y-3">
+                  {candidate.sentMessages.map((m) => (
+                    <li key={m.id}>
+                      <button
+                        className="link link-hover text-left"
+                        onClick={() => setViewing(m.id)}
+                        type="button"
+                      >
+                        {m.subject}
+                      </button>
+                      <div className="text-xs text-base-content/60">
+                        Message {m.auditReference} · {m.sentBy}
+                        {m.automatic && ' (automatic)'} ·{' '}
+                        {formatTimestamp(m.sentAt)}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-base-content/70">Nothing sent yet.</p>
+              )}
+            </div>
+          </section>
+          {viewing !== null && (
+            <SentMessageDialog
+              candidateId={id}
+              onClose={() => setViewing(null)}
+              sentId={viewing}
+            />
+          )}
 
           <section className="card bg-base-100 shadow-sm">
             <div className="card-body gap-3 text-sm">

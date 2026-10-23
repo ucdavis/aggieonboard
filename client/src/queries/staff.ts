@@ -68,6 +68,7 @@ export type Qualification = {
 };
 
 export type StepDetail = {
+  acknowledgmentMessageKey: string | null;
   activatedAt: string | null;
   auditReference: string;
   availableActions: StepAction[];
@@ -85,9 +86,11 @@ export type StepDetail = {
   order: number;
   owner: StaffRole;
   phase: JourneyPhase;
+  requestMessageKey: string | null;
   staffNote: string | null;
   status: StepStatus;
   title: string;
+  vendorMessageKey: string | null;
   watchForSender: string | null;
 };
 
@@ -111,13 +114,53 @@ export type CandidateDetail = {
   i9Method: I9Method;
   id: number;
   lastName: string;
+  /** A side effect of the change just made, such as an automatic message. */
+  notice?: string | null;
   onboardingSpecialist: StaffSummary | null;
   positionTitle: string;
   qualifications: Qualification[];
   recruiter: StaffSummary | null;
   recruitingAssistant: StaffSummary | null;
   requirements: CandidateRequirements;
+  sentMessages: SentMessageSummary[];
   steps: StepDetail[];
+};
+
+export type MissingField = { description: string; fix: string; name: string };
+
+export type MessagePreview = {
+  auditReference: string;
+  blockers: string[];
+  canSend: boolean;
+  html: string;
+  key: string;
+  missing: MissingField[];
+  replyTo: string | null;
+  sender: 'App' | 'External';
+  startsSteps: string[];
+  subject: string;
+  templateVersion: number;
+  text: string;
+  timesSent: number;
+  to: string;
+};
+
+export type SentMessageSummary = {
+  auditReference: string;
+  automatic: boolean;
+  id: number;
+  key: string;
+  sentAt: string;
+  sentBy: string;
+  subject: string;
+  to: string;
+};
+
+export type SentMessageView = SentMessageSummary & {
+  html: string;
+  replyTo: string | null;
+  templateVersion: number;
+  text: string;
 };
 
 export type CandidateInput = {
@@ -157,6 +200,26 @@ export const candidateQueryOptions = (id: number) =>
   queryOptions({
     queryFn: () => fetchJson<CandidateDetail>(`/api/staff/candidates/${id}`),
     queryKey: staffKeys.candidate(id),
+  });
+
+/** Always fetched fresh: a preview reflects deadlines and settings as of now. */
+export const messagePreviewQueryOptions = (id: number, key: string) =>
+  queryOptions({
+    gcTime: 0,
+    queryFn: () =>
+      fetchJson<MessagePreview>(
+        `/api/staff/candidates/${id}/messages/${key}/preview`
+      ),
+    queryKey: ['staff', 'candidates', id, 'preview', key] as const,
+    staleTime: 0,
+  });
+
+export const sentMessageQueryOptions = (id: number, sentId: number) =>
+  queryOptions({
+    queryFn: () =>
+      fetchJson<SentMessageView>(`/api/staff/candidates/${id}/sent/${sentId}`),
+    queryKey: ['staff', 'candidates', id, 'sent', sentId] as const,
+    staleTime: Infinity,
   });
 
 export const staffMembersQueryOptions = () =>
@@ -233,4 +296,12 @@ export const useStepNote = (id: number) =>
         `/api/staff/candidates/${id}/steps/${stepKey}/note`,
         send('PUT', { note })
       )
+  );
+
+export const useSendMessage = (id: number) =>
+  useCandidateMutation((key: string) =>
+    fetchJson<CandidateDetail>(
+      `/api/staff/candidates/${id}/messages/${key}/send`,
+      { method: 'POST' }
+    )
   );

@@ -1,4 +1,5 @@
 using Server.Core.Domain;
+using Server.Core.Messaging;
 
 namespace Server.Core.Journey;
 
@@ -69,6 +70,9 @@ public sealed record StepDetail(
     bool DeadlineConfirmed,
     string? DeadlineQuestion,
     string? WatchForSender,
+    string? RequestMessageKey,
+    string? AcknowledgmentMessageKey,
+    string? VendorMessageKey,
     DateTimeOffset? CompletedAt,
     string? CompletedBy,
     string? StaffNote,
@@ -76,6 +80,7 @@ public sealed record StepDetail(
 
 public sealed record HistoryEntry(DateTimeOffset At, string ActorName, string Action, string Detail);
 
+/// <remarks><see cref="Notice"/> reports a side effect of the change just made, such as an automatic message.</remarks>
 public sealed record CandidateDetail(
     int Id,
     string FirstName,
@@ -95,7 +100,9 @@ public sealed record CandidateDetail(
     IReadOnlyList<QualificationInput> Qualifications,
     IReadOnlyList<StepDetail> Steps,
     IReadOnlyList<HistoryEntry> History,
-    DateTimeOffset CreatedAt);
+    IReadOnlyList<SentMessageSummary> SentMessages,
+    DateTimeOffset CreatedAt,
+    string? Notice = null);
 
 /// <summary>Input that fails validation, by field name (camelCase, as the client sends it).</summary>
 public sealed class JourneyValidationException(IReadOnlyDictionary<string, string[]> errors)

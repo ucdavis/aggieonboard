@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Server.Core.Data;
 using Server.Core.Journey;
+using Server.Core.Messaging;
 using Server.Core.Notification;
 using Server.Helpers;
 using Server.Services;
@@ -50,6 +51,7 @@ try
     builder.Services.AddScoped<IDbInitializer, DbInitializer>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddSingleton(TimeProvider.System);
+    builder.Services.AddScoped<MessageService>();
     builder.Services.AddScoped<JourneyService>();
     // add auth policies here
 

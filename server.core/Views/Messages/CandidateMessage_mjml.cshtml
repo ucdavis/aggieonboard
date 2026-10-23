@@ -1,0 +1,56 @@
+@model Server.Core.Messaging.CandidateMessageModel
+@*
+    Candidate messages get their own frame, not the template's notification layout: they come from
+    UC Davis Health rather than the app, and several ask the candidate to reply, so there is no
+    "do not reply" footer. Replies go to the staff member who sent the message (Reply-To).
+*@
+<mjml>
+  <mj-head>
+    <mj-preview>@Model.PreviewText</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Helvetica, Arial, sans-serif" />
+      <mj-text color="#172033" font-size="16px" line-height="1.6" />
+    </mj-attributes>
+    <mj-style>
+      .message p { margin: 0 0 16px 0; }
+      .message ul { margin: 0 0 16px 0; padding-left: 24px; }
+      .message li { margin-bottom: 4px; }
+      .message a { color: #0047ba; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#eef3f8" width="600px">
+    <mj-section padding="32px 0 16px 0">
+      <mj-column>
+        <mj-text align="center" font-size="24px" font-weight="700" color="#022851" padding="0px">
+          UC Davis Health
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" border-radius="16px" padding="28px 0 12px 0">
+      <mj-column>
+        <mj-text css-class="message" padding="0px 32px">
+          @Html.Raw(Model.BodyHtml)
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    @if (!string.IsNullOrEmpty(Model.ButtonUrl))
+    {
+      <mj-section padding="20px 0 0 0">
+        <mj-column>
+          <mj-button background-color="#0047ba" color="#ffffff" border-radius="8px" font-size="16px"
+                     font-weight="600" inner-padding="14px 30px" href="@Model.ButtonUrl">
+            @Model.ButtonText
+          </mj-button>
+        </mj-column>
+      </mj-section>
+    }
+
+    <mj-section padding="16px 0 32px 0">
+      <mj-column>
+        <mj-text align="center" font-size="12px" color="#5d6b82">UC Davis Health</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

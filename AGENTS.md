@@ -59,6 +59,11 @@ reach parity with.
   `JourneyValidationException` (→ 400 with field errors the client puts on the matching fields).
 - Allowed step moves live in one table, `CandidateJourney.AllowedFrom`. The API returns each step's
   `availableActions` from it, and the UI shows exactly those buttons. Don't duplicate the rules client-side.
+- Messages: `server.core/Messaging/`. `MessageService` previews and sends; `MergeFieldResolver`
+  fills fields (a missing one carries a fix written for staff); `MessageRenderer` keeps the
+  sections that apply and marks gaps as "[missing: …]"; `MessageMarkdown` is the dialect (raw HTML
+  disabled, single line breaks kept, values escaped). The email frame is
+  `server.core/Views/Messages/CandidateMessage_mjml.cshtml`, not the template's notification layout.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what

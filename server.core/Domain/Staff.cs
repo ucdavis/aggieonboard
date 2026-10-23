@@ -19,8 +19,11 @@ public class StaffMember
     /// <summary>May edit templates, settings and the staff list (Phase 6). Independent of <see cref="Role"/>.</summary>
     public bool IsAdmin { get; set; }
 
-    /// <summary>How messages offer this person as a contact: "Name at email (phone)".</summary>
-    public string ContactLine => Phone is null ? $"{Name} at {Email}" : $"{Name} at {Email} ({Phone})";
+    /// <summary>
+    /// How messages offer this person as a contact. The audit writes "Contact me at [contact]" and
+    /// "Questions? Contact [RA].", so this is the address alone, "or" the phone when there is one.
+    /// </summary>
+    public string ContactDetails => Phone is null ? Email : $"{Email} or {Phone}";
 }
 
 /// <summary>

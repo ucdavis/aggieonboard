@@ -18,9 +18,10 @@ Try these flows:
 1. Sign in as Sample User, a whitelisted onboarding specialist and admin. The pipeline lists eight fictional candidates; Taylor Nguyen is overdue. **My candidates** shows Morgan Chen and Riley Johnson.
 2. Open a candidate. Start, complete, block or reopen steps; change a due date; add a staff note. Each change appears under History.
 3. Use **New candidate**, or **Edit details** on a candidate, and toggle a requirement such as Drug screen to watch its step appear or be skipped.
-4. Read any email the app sends in the local inbox linked in the quick start. Mailpit captures all recipients locally and has no relay configured.
-5. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
-6. Visit `/login` and sign out. `/api/user/me` returns `401`.
+4. On a step, choose **Preview message** to see its email filled in for that candidate, with anything missing and how to fix it. **Send** delivers it to the local inbox linked in the quick start and starts the step. Mailpit captures all recipients locally and has no relay configured.
+5. On Jordan Lee's Qualification verification, choose **Candidate done**: message 5 goes out automatically. Sent messages are listed under **Messages sent** and open exactly as they went out.
+6. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
+7. Visit `/login` and sign out. `/api/user/me` returns `401`.
 
 Fixtures are seeded only into an empty database. After a schema or fixture change, reset with `down --volumes` (below).
 

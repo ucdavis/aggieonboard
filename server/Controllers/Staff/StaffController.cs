@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Server.Core.Domain;
 using Server.Core.Journey;
+using Server.Core.Messaging;
 using Server.Services;
 
 namespace Server.Controllers.Staff;
@@ -9,7 +10,7 @@ public sealed record StepActionRequest(string? Reason);
 public sealed record StepDueRequest(DateOnly? Date, TimeOnly? Time);
 public sealed record StepNoteRequest(string? Note);
 
-public class StaffController(JourneyService journey, IUserService users) : StaffControllerBase
+public class StaffController(JourneyService journey, MessageService messages, IUserService users) : StaffControllerBase
 {
     [HttpGet("members")]
     public async Task<IReadOnlyList<StaffSummary>> Members(CancellationToken ct) => await journey.GetStaffAsync(ct);
@@ -61,6 +62,25 @@ public class StaffController(JourneyService journey, IUserService users) : Staff
     [HttpPut("candidates/{id:int}/steps/{key}/note")]
     public Task<ActionResult<CandidateDetail>> StepNote(int id, string key, StepNoteRequest request, CancellationToken ct) =>
         AsStaff(async me => Found(await journey.SetStepNoteAsync(id, key, request.Note, me, ct)), ct);
+
+    /// <summary>The message filled in for this candidate, with anything that stops it being sent.</summary>
+    [HttpGet("candidates/{id:int}/messages/{key}/preview")]
+    public async Task<ActionResult<MessagePreview>> PreviewMessage(int id, string key, CancellationToken ct)
+    {
+        var me = await users.GetStaffMemberAsync(User, ct);
+        if (me is null) return Forbid();
+        return await messages.PreviewAsync(id, key, me, ct) is { } preview ? preview : NotFound();
+    }
+
+    /// <summary>Sends the message and starts the steps it asks for. 409 while anything is missing.</summary>
+    [HttpPost("candidates/{id:int}/messages/{key}/send")]
+    public Task<ActionResult<CandidateDetail>> SendMessage(int id, string key, CancellationToken ct) =>
+        AsStaff(async me => await messages.SendAsync(id, key, me, ct) ? Found(await journey.GetCandidateAsync(id, ct)) : NotFound(), ct);
+
+    /// <summary>A message exactly as it went out.</summary>
+    [HttpGet("candidates/{id:int}/sent/{sentId:int}")]
+    public async Task<ActionResult<SentMessageView>> SentMessage(int id, int sentId, CancellationToken ct) =>
+        await messages.GetSentMessageAsync(id, sentId, ct) is { } sent ? sent : NotFound();
 
     /// <summary>
     /// Changes are made as a named staff member, for the history. The Staff role is re-derived from

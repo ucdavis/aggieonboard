@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
 using Server.Core.Domain;
+using Server.Core.Messaging;
 using Server.Core.Scheduling;
 
 namespace Server.Core.Journey;
@@ -10,7 +11,7 @@ namespace Server.Core.Journey;
 /// What staff do to candidates: list, read, create, edit, and move steps. Every change writes an
 /// <see cref="AuditEvent"/> in the same save, so history cannot fall out of step with the data.
 /// </summary>
-public sealed partial class JourneyService(AppDbContext db, TimeProvider clock)
+public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, MessageService messages)
 {
     public async Task<IReadOnlyList<StaffSummary>> GetStaffAsync(CancellationToken ct = default) =>
         await db.Staff
@@ -109,7 +110,14 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock)
         var detail = $"{step.Step!.Title}: {CandidateJourney.Describe(from)} → {CandidateJourney.Describe(step.Status)}";
         if (!string.IsNullOrWhiteSpace(reason)) detail += $". {reason.Trim()}";
         await AuditAsync(candidate.Id, actor, $"step.{ActionName(action)}", detail, ct);
-        return await ToDetailAsync(candidate, ct);
+
+        // What the candidate sent has arrived: acknowledge it (message 5), or say why that couldn't happen.
+        string? notice = null;
+        if (action == StepAction.MarkWaiting && step.Step.AcknowledgmentMessageKey is { } acknowledgment)
+        {
+            notice = await messages.SendAutomaticAsync(candidate.Id, acknowledgment, actor, ct);
+        }
+        return await ToDetailAsync(candidate, ct) with { Notice = notice };
     }
 
     /// <summary>Sets the due date by hand, or, with a null date, returns the step to its rule.</summary>
@@ -152,26 +160,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock)
         return await ToDetailAsync(candidate, ct);
     }
 
-    /// <summary>The deadline rules as they stand: holidays and the clearance setting are read fresh each time.</summary>
-    public async Task<DeadlineCalculator> DeadlinesAsync(CancellationToken ct = default)
-    {
-        var holidays = await db.Holidays.Select(h => h.Date).ToListAsync(ct);
-        var clearance = await db.Settings
-            .Where(s => s.Key == SettingKeys.ClearanceBusinessDaysBeforeStart)
-            .Select(s => s.Value)
-            .SingleOrDefaultAsync(ct);
-        return new DeadlineCalculator(new BusinessCalendar(holidays), int.TryParse(clearance, out var days) ? days : 0);
-    }
+    private Task<DeadlineCalculator> DeadlinesAsync(CancellationToken ct) => JourneyData.LoadDeadlinesAsync(db, ct);
 
-    private IQueryable<Candidate> WithJourney() =>
-        db.Candidates
-            .Include(c => c.Steps).ThenInclude(s => s.Step)
-            .Include(c => c.Steps).ThenInclude(s => s.CompletedBy)
-            .Include(c => c.Qualifications)
-            .Include(c => c.RecruitingAssistant)
-            .Include(c => c.Recruiter)
-            .Include(c => c.OnboardingSpecialist)
-            .AsSplitQuery();
+    private IQueryable<Candidate> WithJourney() => JourneyData.CandidatesWithJourney(db);
 
     private async Task<(Candidate?, CandidateStep?)> FindStepAsync(int id, string stepKey, CancellationToken ct)
     {
@@ -346,9 +337,11 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock)
                 s.Step!.Key, s.Step.Order, s.Step.AuditReference, s.Step.Title, s.Step.Phase, s.Step.Owner, s.Step.Condition,
                 s.Status, s.ActivatedAt, s.DueDate, s.DueTime, s.DueOverridden, CandidateJourney.IsOverdue(s, now),
                 DescribeRule(s.Step.Deadline, clearanceDays), s.Step.DeadlineConfirmed, s.Step.DeadlineQuestion,
-                s.Step.WatchForSender, s.CompletedAt, s.CompletedBy?.Name, s.StaffNote,
+                s.Step.WatchForSender, s.Step.RequestMessageKey, s.Step.AcknowledgmentMessageKey, s.Step.VendorMessageKey,
+                s.CompletedAt, s.CompletedBy?.Name, s.StaffNote,
                 CandidateJourney.AllowedActions(s.Status))).ToList(),
             history,
+            await messages.GetSentAsync(c.Id, ct),
             c.CreatedAt);
     }
 

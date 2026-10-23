@@ -4,6 +4,7 @@ using Server.Core.Data;
 using Server.Core.Domain;
 using Server.Core.Journey;
 using Server.Core.Seed;
+using Server.Tests.Messaging;
 
 namespace Server.Tests.Journey;
 
@@ -13,6 +14,7 @@ public class JourneyServiceTests : IAsyncLifetime
     private static readonly DateTimeOffset Now = new(2026, 10, 22, 16, 0, 0, TimeSpan.Zero);
 
     private readonly AppDbContext _db = TestDbContextFactory.CreateInMemory();
+    private RecordingEmailService Email { get; } = new();
     private JourneyService _journey = null!;
     private StaffMember _me = null!;
 
@@ -20,7 +22,8 @@ public class JourneyServiceTests : IAsyncLifetime
     {
         await ReferenceDataSeeder.SeedAsync(_db, Now);
         await DevelopmentSeeder.SeedAsync(_db, Now);
-        _journey = new JourneyService(_db, new FixedClock(Now));
+        var clock = new FixedClock(Now);
+        _journey = new JourneyService(_db, clock, TestMessaging.Service(_db, clock, Email));
         _me = await _db.Staff.SingleAsync(s => s.Email == DevelopmentSeeder.SandboxStaffEmail);
     }
 
@@ -205,10 +208,5 @@ public class JourneyServiceTests : IAsyncLifetime
         detail.Steps.Single(s => s.Key == "drug-screen").DeadlineRule.Should().Be("48 business hours after the step starts");
         detail.Steps.Single(s => s.Key == "employee-health").DeadlineRule.Should().Be("Clearance deadline (6 business days before start)");
         detail.Steps.Single(s => s.Key == "dmv").DeadlineRule.Should().Be("Set by staff");
-    }
-
-    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
     }
 }

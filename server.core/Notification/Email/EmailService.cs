@@ -79,7 +79,7 @@ public sealed class EmailService : IEmailService
         AddMailboxRange(mimeMessage.Bcc, message.Recipients.Bcc);
 
         AddOptionalConfiguredMailbox(mimeMessage.Bcc, _options.BccEmail, nameof(SmtpOptions.BccEmail));
-        AddOptionalConfiguredMailbox(mimeMessage.ReplyTo, _options.ReplyToEmail, nameof(SmtpOptions.ReplyToEmail));
+        AddOptionalConfiguredMailbox(mimeMessage.ReplyTo, message.ReplyTo ?? _options.ReplyToEmail, nameof(EmailMessage.ReplyTo));
 
         mimeMessage.Subject = message.Subject;
         mimeMessage.Body = CreateBody(message);
