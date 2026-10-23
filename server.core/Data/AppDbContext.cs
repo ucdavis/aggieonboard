@@ -19,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<CandidateStep> CandidateSteps => Set<CandidateStep>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
     public DbSet<SentMessage> SentMessages => Set<SentMessage>();
+    public DbSet<CandidateAccessToken> CandidateAccessTokens => Set<CandidateAccessToken>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -143,6 +144,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne<Candidate>().WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Template).WithMany().HasForeignKey(x => x.MessageTemplateId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<StaffMember>().WithMany().HasForeignKey(x => x.SentByStaffId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CandidateAccessToken>(e =>
+        {
+            e.HasIndex(x => x.TokenHash).IsUnique();
+            e.HasIndex(x => new { x.CandidateId, x.CreatedAt });
+            e.Property(x => x.TokenHash).HasMaxLength(64).IsFixedLength();
+            e.HasOne<Candidate>().WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Cascade);
         });
 
         base.OnModelCreating(modelBuilder);

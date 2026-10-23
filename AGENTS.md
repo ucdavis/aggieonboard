@@ -64,6 +64,11 @@ reach parity with.
   sections that apply and marks gaps as "[missing: …]"; `MessageMarkdown` is the dialect (raw HTML
   disabled, single line breaks kept, values escaped). The email frame is
   `server.core/Views/Messages/CandidateMessage_mjml.cshtml`, not the template's notification layout.
+- Portal: `server.core/Portal/` (`PortalTokens`, `PortalService`) and `server/Controllers/Portal/`.
+  Candidate sign-in is `server/Helpers/CandidateAuthentication.cs`: its own cookie scheme, never the
+  default, and the `Candidate` policy accepts only it. A portal request's candidate comes only from
+  the `candidate_id` claim. Links are redeemed by POST from the Continue page, never on GET (email
+  scanners open links). Never log, store or display a raw token; logged email copies point at `/portal`.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what

@@ -87,6 +87,7 @@ export const candidate = (
   id: 1,
   lastName: 'Rivera',
   onboardingSpecialist: null,
+  portalLastSignInAt: null,
   positionTitle: 'Clinical Nurse II',
   qualifications: [],
   recruiter: null,

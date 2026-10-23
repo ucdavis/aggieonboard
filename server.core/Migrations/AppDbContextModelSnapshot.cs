@@ -187,6 +187,42 @@ namespace server.core.Migrations
                     b.ToTable("Candidates");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.CandidateAccessToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ConsumedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nchar(64)")
+                        .IsFixedLength();
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("CandidateId", "CreatedAt");
+
+                    b.ToTable("CandidateAccessTokens");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.CandidateQualification", b =>
                 {
                     b.Property<int>("Id")
@@ -592,6 +628,15 @@ namespace server.core.Migrations
                     b.Navigation("Recruiter");
 
                     b.Navigation("RecruitingAssistant");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.CandidateAccessToken", b =>
+                {
+                    b.HasOne("Server.Core.Domain.Candidate", null)
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Server.Core.Domain.CandidateQualification", b =>

@@ -117,6 +117,7 @@ export type CandidateDetail = {
   /** A side effect of the change just made, such as an automatic message. */
   notice?: string | null;
   onboardingSpecialist: StaffSummary | null;
+  portalLastSignInAt: string | null;
   positionTitle: string;
   qualifications: Qualification[];
   recruiter: StaffSummary | null;

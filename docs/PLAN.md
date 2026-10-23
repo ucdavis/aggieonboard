@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-22 — Phases 0–3 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 4 (candidate portal).**
+> **STATUS 2026-10-23 — Phases 0–4 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 5 (candidate responses).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -104,6 +104,15 @@ Seeded verbatim. These look like drafting artifacts, but changing them is your c
   note about the source template and repeats the previous paragraph. A lone "." follows the last link.
 - **11A / 11B / 12**: "reply to this email" instructions will need updating once the portal collects those answers (Phase 5).
 
+New wording the app needed (not in the audit), written by us and open to rewrite:
+
+- **Sign-in link email** (`server.core/Seed/Messages/p1-portal-link.md`): "Your UC Davis Health onboarding checklist" / "Use the button below to open your onboarding checklist…".
+- **Button on every email**: "View your onboarding checklist".
+- **Portal labels**: "Your onboarding checklist", "To do / In progress / Coming up / Done", "Nothing to do right now",
+  "You're all caught up. We'll email you when there's something to do.", "Watch for an email from … Check your spam or
+  junk folder if you don't see it.", "Read our email: …", "Questions? Contact … at …", the Continue page ("For your
+  security, this link works once…") and the new-link form ("If that address is on file, we've emailed it a new link…").
+
 ---
 
 ## Domain model (normalized SQL, EF Core — same approach as JDWriter)
@@ -128,7 +137,7 @@ Built in Phase 1 (`server.core/Domain/`). Enums are stored as their names.
   description, confirmed flag, open question.
 - **Holiday**: UC Davis observed holidays, Nov 2026 – Sep 2027 (dates.ucdavis.edu). Extend yearly.
 
-Later phases add: **CandidateResponse** (5), **SentMessage** (3, built: subject, HTML and text as sent, template version, sender, automatic flag), **CandidateAccessToken** (4),
+Later phases add: **CandidateResponse** (5), **SentMessage** (3, built: subject, HTML and text as sent, template version, sender, automatic flag), **CandidateAccessToken** (4, built: SHA-256 hash, expiry, consumed-at),
 **AuditEvent** (2, built: every staff change, shown as the candidate's history).
 
 ### Deadline rules
@@ -223,7 +232,23 @@ Contact fields are the email ("or" phone) because the copy reads "Contact me at 
 messages 9 and 5 delivered to Mailpit. Planned: template rendering, preview with missing-field detection, send via
 SMTP→Mailpit, the SentMessage log, and the auto-acknowledgment for #5. *Demo: the full journey in the Mailpit inbox.*
 
-**Phase 4: Candidate portal (read).** Candidate auth scheme, magic links in every email, the portal
+**Phase 4: Candidate portal (read).** ✅ 2026-10-23. Decisions beyond the plan:
+- **Links open a "Continue" page; only its POST redeems the link.** Email security scanners (UC Davis uses Outlook
+  Safe Links) open every link; a one-time link redeemed on GET would be spent before the candidate clicked.
+- Tokens: 32 random bytes, SHA-256 stored, single use, 14 days (`Portal:LinkLifetimeDays`); 7-day sliding session
+  (`Portal:SessionDays`); at most 3 links per candidate per hour; anonymous endpoints rate-limited (10/min/IP);
+  "email me a new link" always answers 202 after at least one second, so timing says nothing.
+- Every app email carries "View your onboarding checklist" with a fresh one-time link. The **logged copy points at
+  `/portal` instead**, so the message log never holds a credential. A token is recorded only after the email server
+  accepts the message.
+- The portal adds no step copy: per step it shows the title, due date, "watch for" (sender, address, subject), who to
+  ask (the assigned owner), and the emails actually sent for it. Waiting and blocked both read "In progress";
+  skipped steps and staff notes never leave the server.
+- Staff: a Portal card with last sign-in and "Email a sign-in link" (previewed like any message).
+- Verified on the sandbox: scanner GET doesn't spend a link; reuse refused; candidate cookie gets 401 from staff
+  endpoints and staff cookie 401 from the portal; another candidate's email 404s; tampered cookie 401; rate limit 429.
+
+Planned: candidate auth scheme, magic links in every email, the portal
 timeline with Do now / Watch for / What happens next / contacts, and the request-new-link flow. Isolation tests.
 *Stakeholder demo milestone: walk TA and SSO through it.*
 

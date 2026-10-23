@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Server.Core.Data;
 using Server.Core.Messaging;
 using Server.Core.Notification;
+using Server.Core.Portal;
 
 namespace Server.Tests.Messaging;
 
@@ -24,7 +25,9 @@ public sealed class RecordingEmailService : IEmailService
 public sealed class BodyOnlyRenderer : INotificationRenderer
 {
     public Task<string> RenderAsync<TModel>(string templatePath, TModel model, CancellationToken cancellationToken = default) =>
-        Task.FromResult(model is CandidateMessageModel m ? $"<html>{m.BodyHtml}</html>" : "<html></html>");
+        Task.FromResult(model is CandidateMessageModel m
+            ? $"<html>{m.BodyHtml}{(m.ButtonUrl is null ? "" : $"<a href=\"{m.ButtonUrl}\">{m.ButtonText}</a>")}</html>"
+            : "<html></html>");
 }
 
 public sealed class FixedClock(DateTimeOffset now) : TimeProvider
@@ -34,8 +37,14 @@ public sealed class FixedClock(DateTimeOffset now) : TimeProvider
 
 public static class TestMessaging
 {
-    public static MessageService Service(AppDbContext db, TimeProvider clock, RecordingEmailService email, bool smtpConfigured = true) =>
+    public const string BaseUrl = "https://onboard.example.test";
+
+    public static IOptions<PortalOptions> Portal(string baseUrl = BaseUrl) => Options.Create(new PortalOptions { BaseUrl = baseUrl });
+
+    public static MessageService Service(
+        AppDbContext db, TimeProvider clock, RecordingEmailService email, bool smtpConfigured = true, string baseUrl = BaseUrl) =>
         new(db, clock, new BodyOnlyRenderer(), email,
             Options.Create(new SmtpOptions { Host = smtpConfigured ? "smtp.example.test" : "" }),
+            new PortalTokens(db, clock, Portal(baseUrl)), Portal(baseUrl),
             NullLogger<MessageService>.Instance);
 }

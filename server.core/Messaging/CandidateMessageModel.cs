@@ -11,7 +11,10 @@ public sealed class CandidateMessageModel
     /// <summary>The inbox preview line.</summary>
     public string PreviewText { get; init; } = "";
 
-    /// <summary>The portal button (Phase 4). No button when null.</summary>
+    /// <summary>Every candidate message's button. Copy to review (docs/PLAN.md).</summary>
+    public const string PortalButtonText = "View your onboarding checklist";
+
+    /// <summary>The portal button. No button when null (no Portal:BaseUrl).</summary>
     public string? ButtonUrl { get; init; }
     public string? ButtonText { get; init; }
 }

@@ -119,3 +119,7 @@ export const errorMessage = (error: unknown) => {
   }
   return 'Something went wrong. Try again.';
 };
+
+/** "Message 4" for the audit's messages; the app's own messages (audit "portal") have no number. */
+export const messageLabel = (auditReference: string) =>
+  auditReference === 'portal' ? 'Sign-in link' : `Message ${auditReference}`;

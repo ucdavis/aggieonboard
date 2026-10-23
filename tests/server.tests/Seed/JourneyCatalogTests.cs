@@ -20,7 +20,9 @@ public class JourneyCatalogTests
     [Fact]
     public void Embeds_every_message_from_the_audit()
     {
-        Messages.Select(m => m.AuditReference).Should().Equal("1", "2", "4", "5", "7", "8", "9", "10", "11A", "11B", "12", "13");
+        Messages.Where(m => !SystemMessages.Keys.Contains(m.Key)).Select(m => m.AuditReference)
+            .Should().Equal("1", "2", "4", "5", "7", "8", "9", "10", "11A", "11B", "12", "13");
+        Messages.Select(m => m.Key).Should().Contain(SystemMessages.Keys);
         Messages.Select(m => m.Key).Should().OnlyHaveUniqueItems();
     }
 
@@ -52,11 +54,11 @@ public class JourneyCatalogTests
     }
 
     [Fact]
-    public void Every_message_is_used_by_some_step()
+    public void Every_audit_message_is_used_by_some_step()
     {
         var used = Steps.SelectMany(s => new[] { s.RequestMessageKey, s.AcknowledgmentMessageKey, s.VendorMessageKey }).OfType<string>().ToHashSet();
 
-        Messages.Select(m => m.Key).Should().OnlyContain(key => used.Contains(key));
+        Messages.Select(m => m.Key).Where(key => !SystemMessages.Keys.Contains(key)).Should().OnlyContain(key => used.Contains(key));
     }
 
     [Fact]

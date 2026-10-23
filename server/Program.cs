@@ -7,6 +7,9 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Server.Core.Data;
 using Server.Core.Journey;
 using Server.Core.Messaging;
+using Server.Core.Portal;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Server.Core.Notification;
 using Server.Helpers;
 using Server.Services;
@@ -37,6 +40,8 @@ try
 
     // Use Entra by default; the Docker sandbox explicitly enables local cookies.
     builder.Services.AddAuthenticationServices(builder.Configuration, builder.Environment);
+    // Candidates sign in to the portal with an emailed link, never with Entra.
+    builder.Services.AddCandidateAuthentication(builder.Configuration);
 
     // Enums travel as their names ("ActionNeeded"), in both directions.
     builder.Services.AddControllersWithViews()
@@ -51,7 +56,24 @@ try
     builder.Services.AddScoped<IDbInitializer, DbInitializer>();
     builder.Services.AddScoped<IUserService, UserService>();
     builder.Services.AddSingleton(TimeProvider.System);
+    builder.Services.AddOptions<PortalOptions>()
+        .Bind(builder.Configuration.GetSection(PortalOptions.SectionName))
+        .PostConfigure(o =>
+        {
+            if (string.IsNullOrWhiteSpace(o.BaseUrl)) o.BaseUrl = builder.Configuration["Notification:BaseUrl"] ?? "";
+        });
+    builder.Services.AddScoped<PortalTokens>();
+    builder.Services.AddScoped<PortalService>();
     builder.Services.AddScoped<MessageService>();
+
+    // Anonymous portal endpoints (link requests, sign-in) are limited per client address.
+    builder.Services.AddRateLimiter(o =>
+    {
+        o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        o.AddPolicy(PortalRateLimit, ctx => RateLimitPartition.GetFixedWindowLimiter(
+            ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+    });
     builder.Services.AddScoped<JourneyService>();
     // add auth policies here
 
@@ -157,6 +179,7 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseRateLimiter();
 
     // enrich every log with request context
     app.UseRequestContextLogging();
@@ -202,4 +225,10 @@ static void ApplyNoStoreHeaders(HttpContext context)
     context.Response.Headers.CacheControl = "no-store,max-age=0";
     context.Response.Headers.Pragma = "no-cache";
     context.Response.Headers.Expires = "0";
+}
+
+public partial class Program
+{
+    /// <summary>The rate-limiter policy on anonymous portal endpoints.</summary>
+    public const string PortalRateLimit = "portal";
 }

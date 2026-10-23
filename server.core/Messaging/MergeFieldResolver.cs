@@ -17,7 +17,8 @@ public sealed record MergeContext(
     IReadOnlyDictionary<string, AppSetting> Settings,
     DeadlineCalculator Deadlines,
     IReadOnlyDictionary<string, Due?> DueByStep,
-    DateTimeOffset Now);
+    DateTimeOffset Now,
+    int PortalLinkLifetimeDays = 14);
 
 /// <summary>Fills every field in <see cref="MergeFields.All"/>. A test holds the two lists together.</summary>
 public static class MergeFieldResolver
@@ -85,6 +86,8 @@ public static class MergeFieldResolver
             ["EmployeeDataFormContact"] = Setting(SettingKeys.EmployeeDataFormContact),
             ["OehcFormUrl"] = Setting(SettingKeys.OehcFormUrl, url: true),
             ["FingerprintSchedulingUrl"] = Setting(SettingKeys.FingerprintSchedulingUrl, url: true),
+
+            ["PortalLinkLifetime"] = new(context.PortalLinkLifetimeDays == 1 ? "1 day" : $"{context.PortalLinkLifetimeDays} days", ""),
         };
     }
 

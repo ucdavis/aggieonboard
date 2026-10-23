@@ -6,6 +6,7 @@ import {
   formatDate,
   formatTimestamp,
   i9Label,
+  messageLabel,
   phaseLabel,
 } from '@/lib/journey.ts';
 import {
@@ -13,7 +14,10 @@ import {
   type CandidateDetail,
   type JourneyPhase,
 } from '@/queries/staff.ts';
-import { SentMessageDialog } from '@/shared/staff/MessageDialogs.tsx';
+import {
+  MessagePreviewDialog,
+  SentMessageDialog,
+} from '@/shared/staff/MessageDialogs.tsx';
 import { StepRow } from '@/shared/staff/StepRow.tsx';
 
 export const Route = createFileRoute(
@@ -45,6 +49,8 @@ function CandidatePage() {
     isPending,
   } = useQuery(candidateQueryOptions(id));
   const [viewing, setViewing] = useState<number | null>(null);
+  const [sendingLink, setSendingLink] = useState(false);
+  const [linkNotice, setLinkNotice] = useState<string | null>(null);
 
   if (isPending) {
     return (
@@ -181,6 +187,46 @@ function CandidatePage() {
 
           <section className="card bg-base-100 shadow-sm">
             <div className="card-body gap-3 text-sm">
+              <h2 className="card-title text-base">Portal</h2>
+              <p>
+                {candidate.portalLastSignInAt
+                  ? `Last signed in ${formatTimestamp(candidate.portalLastSignInAt)}.`
+                  : 'Has not signed in to the portal yet.'}
+              </p>
+              <p className="text-base-content/70">
+                Every email includes a button to the candidate&apos;s checklist.
+              </p>
+              {linkNotice && (
+                <div className="alert alert-info py-2 text-sm" role="status">
+                  {linkNotice}
+                </div>
+              )}
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => {
+                  setLinkNotice(null);
+                  setSendingLink(true);
+                }}
+                type="button"
+              >
+                Email a sign-in link
+              </button>
+            </div>
+          </section>
+          {sendingLink && (
+            <MessagePreviewDialog
+              candidateId={id}
+              messageKey="portal-link"
+              onClose={() => setSendingLink(false)}
+              onSent={() => {
+                setSendingLink(false);
+                setLinkNotice(`A sign-in link was sent to ${candidate.email}.`);
+              }}
+            />
+          )}
+
+          <section className="card bg-base-100 shadow-sm">
+            <div className="card-body gap-3 text-sm">
               <h2 className="card-title text-base">Messages sent</h2>
               {candidate.sentMessages.length ? (
                 <ol className="space-y-3">
@@ -194,7 +240,7 @@ function CandidatePage() {
                         {m.subject}
                       </button>
                       <div className="text-xs text-base-content/60">
-                        Message {m.auditReference} · {m.sentBy}
+                        {messageLabel(m.auditReference)} · {m.sentBy}
                         {m.automatic && ' (automatic)'} ·{' '}
                         {formatTimestamp(m.sentAt)}
                       </div>

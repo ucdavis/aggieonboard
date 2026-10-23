@@ -77,6 +77,13 @@ public class StaffController(JourneyService journey, MessageService messages, IU
     public Task<ActionResult<CandidateDetail>> SendMessage(int id, string key, CancellationToken ct) =>
         AsStaff(async me => await messages.SendAsync(id, key, me, ct) ? Found(await journey.GetCandidateAsync(id, ct)) : NotFound(), ct);
 
+    /// <summary>Emails the candidate a link to their portal checklist.</summary>
+    [HttpPost("candidates/{id:int}/portal-link")]
+    public Task<ActionResult<CandidateDetail>> SendPortalLink(int id, CancellationToken ct) =>
+        AsStaff(async me => await messages.SendAsync(id, SystemMessages.PortalLink, me, ct)
+            ? Found(await journey.GetCandidateAsync(id, ct))
+            : NotFound(), ct);
+
     /// <summary>A message exactly as it went out.</summary>
     [HttpGet("candidates/{id:int}/sent/{sentId:int}")]
     public async Task<ActionResult<SentMessageView>> SentMessage(int id, int sentId, CancellationToken ct) =>

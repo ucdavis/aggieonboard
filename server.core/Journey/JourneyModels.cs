@@ -101,6 +101,7 @@ public sealed record CandidateDetail(
     IReadOnlyList<StepDetail> Steps,
     IReadOnlyList<HistoryEntry> History,
     IReadOnlyList<SentMessageSummary> SentMessages,
+    DateTimeOffset? PortalLastSignInAt,
     DateTimeOffset CreatedAt,
     string? Notice = null);
 

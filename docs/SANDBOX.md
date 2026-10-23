@@ -20,8 +20,9 @@ Try these flows:
 3. Use **New candidate**, or **Edit details** on a candidate, and toggle a requirement such as Drug screen to watch its step appear or be skipped.
 4. On a step, choose **Preview message** to see its email filled in for that candidate, with anything missing and how to fix it. **Send** delivers it to the local inbox linked in the quick start and starts the step. Mailpit captures all recipients locally and has no relay configured.
 5. On Jordan Lee's Qualification verification, choose **Candidate done**: message 5 goes out automatically. Sent messages are listed under **Messages sent** and open exactly as they went out.
-6. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
-7. Visit `/login` and sign out. `/api/user/me` returns `401`.
+6. In the local inbox, open any email and choose **View your onboarding checklist**, then **Continue**: that is the candidate portal, signed in as that candidate. The same link won't work twice. To get in again, use **Email a sign-in link** on the candidate's page, or **Email me a new link** at `/portal`.
+7. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
+8. Visit `/login` and sign out. `/api/user/me` returns `401`.
 
 Fixtures are seeded only into an empty database. After a schema or fixture change, reset with `down --volumes` (below).
 

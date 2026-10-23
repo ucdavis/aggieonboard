@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { errorMessage, formatTimestamp } from '@/lib/journey.ts';
+import { errorMessage, formatTimestamp, messageLabel } from '@/lib/journey.ts';
 import {
   messagePreviewQueryOptions,
   sentMessageQueryOptions,
@@ -30,7 +30,9 @@ export function MessagePreviewDialog({
     <Dialog
       onClose={onClose}
       title={
-        p ? `Message ${p.auditReference}: ${p.subject}` : 'Message preview'
+        p
+          ? `${messageLabel(p.auditReference)}: ${p.subject}`
+          : 'Message preview'
       }
     >
       {preview.error ? (
@@ -110,7 +112,7 @@ export function MessagePreviewDialog({
                   send.mutate(messageKey, {
                     onSuccess: () =>
                       onSent(
-                        `Message ${p.auditReference} was sent to ${p.to}.`
+                        `${messageLabel(p.auditReference)} was sent to ${p.to}.`
                       ),
                   })
                 }
@@ -161,7 +163,7 @@ export function SentMessageDialog({
             <dd>{m.to}</dd>
             <dt className="text-base-content/60">Template</dt>
             <dd>
-              Message {m.auditReference}, version {m.templateVersion}
+              {messageLabel(m.auditReference)}, version {m.templateVersion}
             </dd>
           </dl>
           <EmailFrame html={m.html} title={`Sent copy of ${m.subject}`} />

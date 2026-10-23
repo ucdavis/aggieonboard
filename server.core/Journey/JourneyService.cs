@@ -342,6 +342,7 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
                 CandidateJourney.AllowedActions(s.Status))).ToList(),
             history,
             await messages.GetSentAsync(c.Id, ct),
+            await db.CandidateAccessTokens.Where(t => t.CandidateId == c.Id).MaxAsync(t => t.ConsumedAt, ct),
             c.CreatedAt);
     }
 

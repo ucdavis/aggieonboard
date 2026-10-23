@@ -7,6 +7,8 @@ using Server.Core.Domain;
 using Server.Core.Journey;
 using Server.Core.Messaging;
 using Server.Core.Notification;
+using Server.Core.Portal;
+using System.Text.RegularExpressions;
 using Server.Core.Seed;
 
 namespace Server.Tests.Messaging;
@@ -128,13 +130,63 @@ public class MessageServiceTests : IAsyncLifetime
         sent.Should().BeEquivalentTo(new
         {
             MessageKey = "qualifications-request", AuditReference = "4", Subject = email.Subject,
-            Html = email.HtmlBody, Text = email.TextBody, SentByName = "Sample User", Automatic = false,
+            SentByName = "Sample User", Automatic = false,
         });
+
+        // The delivered email carries a one-time sign-in link; the logged copy points at the portal
+        // instead, so nobody reading the log holds a credential.
+        var token = SignInToken(email.HtmlBody);
+        email.TextBody.Should().EndWith($"View your onboarding checklist: {TestMessaging.BaseUrl}/c/{token}\n");
+        (await _db.CandidateAccessTokens.SingleAsync()).TokenHash.Should().Be(PortalTokens.Hash(token));
+        sent.Html.Should().Contain($"{TestMessaging.BaseUrl}/portal").And.NotContain(token);
+        sent.Text.Should().Contain($"{TestMessaging.BaseUrl}/portal").And.NotContain(token);
+        sent.Html.Should().Be(email.HtmlBody.Replace($"/c/{token}", "/portal"));
 
         var step = (await Candidate("Jordan")).Steps.Single(s => s.Step!.Key == "qualifications");
         step.Status.Should().Be(StepStatus.ActionNeeded);
         step.ActivatedAt.Should().Be(Now);
         (await _db.AuditEvents.Select(e => e.Action).ToListAsync()).Should().BeEquivalentTo("message.sent", "step.activated");
+    }
+
+    private static string SignInToken(string html) =>
+        Regex.Match(html, $@"{Regex.Escape(TestMessaging.BaseUrl)}/c/([A-Za-z0-9_-]+)").Groups[1].Value;
+
+    [Fact]
+    public async Task A_failed_delivery_leaves_no_working_link()
+    {
+        var alex = await Candidate("Alex");
+        _email.Fail = true;
+
+        var send = () => Messages().SendAsync(alex.Id, SystemMessages.PortalLink, _me);
+
+        await send.Should().ThrowAsync<MessageDeliveryException>();
+        (await _db.CandidateAccessTokens.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Without_the_app_address_emails_have_no_button_and_links_cannot_be_sent()
+    {
+        var alex = await Candidate("Alex");
+        var messages = TestMessaging.Service(_db, _clock, _email, baseUrl: "");
+
+        (await messages.PreviewAsync(alex.Id, SystemMessages.PortalLink, _me))!.Blockers
+            .Should().Contain("Sign-in links need the app's address (Portal:BaseUrl or Notification:BaseUrl).");
+
+        await messages.SendAsync(alex.Id, "references-request", _me);
+        _email.Sent.Single().HtmlBody.Should().NotContain("<a href");
+        (await _db.CandidateAccessTokens.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task The_sign_in_link_email_says_how_long_the_link_works()
+    {
+        var alex = await Candidate("Alex");
+
+        var preview = (await Messages().PreviewAsync(alex.Id, SystemMessages.PortalLink, _me))!;
+
+        preview.CanSend.Should().BeTrue();
+        preview.Subject.Should().Be("Your UC Davis Health onboarding checklist");
+        preview.Text.Should().Contain("The button works once and expires in 14 days.");
     }
 
     [Fact]

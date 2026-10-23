@@ -47,6 +47,9 @@ public static partial class MergeFields
         new("EmployeeDataFormContact", "Who answers questions about the Employee Data Gathering Form."),
         new("OehcFormUrl", "Link to the Employee Health (OEHC) appointment request form."),
         new("FingerprintSchedulingUrl", "Link for scheduling a fingerprinting appointment."),
+
+        // The portal
+        new("PortalLinkLifetime", "How long an emailed checklist link works, in words: \"14 days\"."),
     ];
 
     public static readonly IReadOnlySet<string> Names = All.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
