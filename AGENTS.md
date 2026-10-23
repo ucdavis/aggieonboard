@@ -69,6 +69,12 @@ reach parity with.
   default, and the `Candidate` policy accepts only it. A portal request's candidate comes only from
   the `candidate_id` claim. Links are redeemed by POST from the Continue page, never on GET (email
   scanners open links). Never log, store or display a raw token; logged email copies point at `/portal`.
+- Scheduling: `server.core/Scheduling/` (`SlotEngine` is pure; `SchedulingService` books, cancels,
+  records attendance and edits availability) and `server/Controllers/Schedule/` (`/api/schedule/*`,
+  role `Scheduling`). Schedule times are Pacific wall-clock `DateTime`s, never converted. Booking runs
+  in a serializable transaction; keep any new capacity check inside it. A team member
+  (`StaffRole.TeamMember`) gets `Scheduling` but never `Staff`: no pipeline, no candidate records.
+  Team-scoped endpoints answer 404, not 403, for another team's location or appointment.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what

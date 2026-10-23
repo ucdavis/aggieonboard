@@ -21,17 +21,21 @@
 <main>
     <p>AggieOnboard · Docker sandbox</p>
     <h1>Choose a local user</h1>
-    <p>These fictional accounts work without Entra or a password. Sample User can open every example. Basic User lets you check access denied responses.</p>
+    <p>These fictional accounts work without Entra or a password. Their access comes from the staff whitelist, as a real sign-in's would.</p>
     <form action="/login/local" method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" name="returnUrl" value="@Model" />
         <button name="persona" value="sample" type="submit">
             <strong>Sign in as Sample User</strong>
-            <span>sample@example.test · User and SampleRole</span>
+            <span>sample@example.test · onboarding specialist and admin, on the SSO I-9 desk</span>
+        </button>
+        <button name="persona" value="scheduler" type="submit">
+            <strong>Sign in as Schedule User</strong>
+            <span>scheduler@example.test · police-department team member: the schedule only</span>
         </button>
         <button name="persona" value="basic" type="submit">
             <strong>Sign in as Basic User</strong>
-            <span>basic@example.test · User only</span>
+            <span>basic@example.test · signed in but not staff: see access denied</span>
         </button>
     </form>
     @if (User.Identity?.IsAuthenticated == true)
@@ -42,7 +46,6 @@
             <button type="submit">Sign out</button>
         </form>
     }
-    <p><a href="/about">Visit the public about page</a></p>
 </main>
 </body>
 </html>

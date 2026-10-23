@@ -76,6 +76,12 @@ public enum StaffRole
     Recruiter,
     OnboardingSpecialist,
     LearningAndDevelopment,
+
+    /// <summary>
+    /// Runs appointments only (a police department, Employee Health): signs in to the schedule,
+    /// never to the pipeline or candidate records. Owns no journey step.
+    /// </summary>
+    TeamMember,
 }
 
 /// <summary>

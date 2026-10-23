@@ -54,6 +54,114 @@ namespace server.core.Migrations
                     b.ToTable("Settings");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.Appointment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppointmentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("BookedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("BookedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CancelReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("ReminderSentAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTimeOffset?>("StatusChangedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("StatusChangedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentTypeId");
+
+                    b.HasIndex("CandidateId", "AppointmentTypeId");
+
+                    b.HasIndex("LocationId", "Start");
+
+                    b.ToTable("Appointments");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AppointmentType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChangeCutoffHours")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("CompletesStepOnAttendance")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("MinNoticeHours")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("StepKey")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<bool>("WindowConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("WindowQuestion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("AppointmentTypes");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.AuditEvent", b =>
                 {
                     b.Property<int>("Id")
@@ -309,6 +417,33 @@ namespace server.core.Migrations
                     b.ToTable("CandidateSteps");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.Closure", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("Closures");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.Holiday", b =>
                 {
                     b.Property<DateOnly>("Date")
@@ -322,6 +457,41 @@ namespace server.core.Migrations
                     b.HasKey("Date");
 
                     b.ToTable("Holidays");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.Location", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("AppointmentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentTypeId");
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.MessageTemplate", b =>
@@ -399,6 +569,37 @@ namespace server.core.Migrations
                     b.HasIndex("MessageTemplateId");
 
                     b.ToTable("MessageTemplateSections", (string)null);
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ScheduleSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("End")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("Start")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId", "Start");
+
+                    b.ToTable("ScheduleSessions");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.SentMessage", b =>
@@ -593,6 +794,176 @@ namespace server.core.Migrations
                     b.ToTable("StepDefinitions");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.Team", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.ToTable("Teams");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.TeamMembership", b =>
+                {
+                    b.Property<int>("TeamId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StaffMemberId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TeamId", "StaffMemberId");
+
+                    b.HasIndex("StaffMemberId");
+
+                    b.ToTable("TeamMembership");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.WeeklyHours", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Day")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<TimeOnly>("End")
+                        .HasColumnType("time");
+
+                    b.Property<int>("LocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SlotMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly>("Start")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.ToTable("WeeklyHours");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.Appointment", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppointmentType", "AppointmentType")
+                        .WithMany()
+                        .HasForeignKey("AppointmentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.Candidate", "Candidate")
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.Location", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppointmentType");
+
+                    b.Navigation("Candidate");
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AppointmentType", b =>
+                {
+                    b.OwnsOne("Server.Core.Domain.DeadlineRule", "Earliest", b1 =>
+                        {
+                            b1.Property<int>("AppointmentTypeId")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("Amount")
+                                .HasColumnType("int")
+                                .HasColumnName("EarliestAmount");
+
+                            b1.Property<string>("Anchor")
+                                .IsRequired()
+                                .HasMaxLength(40)
+                                .HasColumnType("nvarchar(40)")
+                                .HasColumnName("EarliestAnchor");
+
+                            b1.Property<string>("Unit")
+                                .IsRequired()
+                                .HasMaxLength(40)
+                                .HasColumnType("nvarchar(40)")
+                                .HasColumnName("EarliestUnit");
+
+                            b1.HasKey("AppointmentTypeId");
+
+                            b1.ToTable("AppointmentTypes");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AppointmentTypeId");
+                        });
+
+                    b.OwnsOne("Server.Core.Domain.DeadlineRule", "Latest", b1 =>
+                        {
+                            b1.Property<int>("AppointmentTypeId")
+                                .HasColumnType("int");
+
+                            b1.Property<int>("Amount")
+                                .HasColumnType("int")
+                                .HasColumnName("LatestAmount");
+
+                            b1.Property<string>("Anchor")
+                                .IsRequired()
+                                .HasMaxLength(40)
+                                .HasColumnType("nvarchar(40)")
+                                .HasColumnName("LatestAnchor");
+
+                            b1.Property<string>("Unit")
+                                .IsRequired()
+                                .HasMaxLength(40)
+                                .HasColumnType("nvarchar(40)")
+                                .HasColumnName("LatestUnit");
+
+                            b1.HasKey("AppointmentTypeId");
+
+                            b1.ToTable("AppointmentTypes");
+
+                            b1.WithOwner()
+                                .HasForeignKey("AppointmentTypeId");
+                        });
+
+                    b.Navigation("Earliest")
+                        .IsRequired();
+
+                    b.Navigation("Latest")
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Server.Core.Domain.AuditEvent", b =>
                 {
                     b.HasOne("Server.Core.Domain.StaffMember", null)
@@ -674,11 +1045,48 @@ namespace server.core.Migrations
                     b.Navigation("Step");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.Closure", b =>
+                {
+                    b.HasOne("Server.Core.Domain.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.Location", b =>
+                {
+                    b.HasOne("Server.Core.Domain.AppointmentType", "AppointmentType")
+                        .WithMany("Locations")
+                        .HasForeignKey("AppointmentTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.Team", "Team")
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AppointmentType");
+
+                    b.Navigation("Team");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.MessageTemplateSection", b =>
                 {
                     b.HasOne("Server.Core.Domain.MessageTemplate", null)
                         .WithMany("Sections")
                         .HasForeignKey("MessageTemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.ScheduleSession", b =>
+                {
+                    b.HasOne("Server.Core.Domain.Location", null)
+                        .WithMany()
+                        .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -740,6 +1148,39 @@ namespace server.core.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.TeamMembership", b =>
+                {
+                    b.HasOne("Server.Core.Domain.StaffMember", "StaffMember")
+                        .WithMany("Teams")
+                        .HasForeignKey("StaffMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.Team", "Team")
+                        .WithMany("Members")
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StaffMember");
+
+                    b.Navigation("Team");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.WeeklyHours", b =>
+                {
+                    b.HasOne("Server.Core.Domain.Location", null)
+                        .WithMany("Hours")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.AppointmentType", b =>
+                {
+                    b.Navigation("Locations");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.Candidate", b =>
                 {
                     b.Navigation("Qualifications");
@@ -747,9 +1188,24 @@ namespace server.core.Migrations
                     b.Navigation("Steps");
                 });
 
+            modelBuilder.Entity("Server.Core.Domain.Location", b =>
+                {
+                    b.Navigation("Hours");
+                });
+
             modelBuilder.Entity("Server.Core.Domain.MessageTemplate", b =>
                 {
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.StaffMember", b =>
+                {
+                    b.Navigation("Teams");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.Team", b =>
+                {
+                    b.Navigation("Members");
                 });
 #pragma warning restore 612, 618
         }

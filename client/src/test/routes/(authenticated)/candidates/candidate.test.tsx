@@ -4,7 +4,12 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mswUtils.ts';
 import { renderRoute } from '@/test/routerUtils.tsx';
-import { candidate, meAsStaff, step } from '@/test/staffFixtures.ts';
+import {
+  candidate,
+  meAsStaff,
+  noAppointments,
+  step,
+} from '@/test/staffFixtures.ts';
 
 const stepCard = (title: string) =>
   screen.getByRole('listitem', { name: new RegExp(title) });
@@ -13,6 +18,7 @@ describe('candidate route', () => {
   it('shows each step with its rule, open question, and the moves it allows', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () => HttpResponse.json(candidate()))
     );
 
@@ -46,6 +52,7 @@ describe('candidate route', () => {
     const posted: string[] = [];
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () => HttpResponse.json(candidate())),
       http.post(
         '/api/staff/candidates/1/steps/:key/actions/:move',
@@ -100,6 +107,7 @@ describe('candidate route', () => {
   it('explains a move the server refuses', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () => HttpResponse.json(candidate())),
       http.post('/api/staff/candidates/1/steps/:key/actions/:move', () =>
         HttpResponse.json(
@@ -134,6 +142,7 @@ describe('candidate route', () => {
   it('says so when the candidate does not exist', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get(
         '/api/staff/candidates/99',
         () => new HttpResponse(null, { status: 404 })

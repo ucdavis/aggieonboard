@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-23 — Phases 0–4 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: Phase 5 (candidate responses).**
+> **STATUS 2026-10-23 — Phases 0–4 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Phase 5 re-scoped to scheduling; 5a (the schedule) done; next: 5b (candidate booking).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -252,8 +252,54 @@ Planned: candidate auth scheme, magic links in every email, the portal
 timeline with Do now / Watch for / What happens next / contacts, and the request-new-link flow. Isolation tests.
 *Stakeholder demo milestone: walk TA and SSO through it.*
 
-**Phase 5: Candidate responses.** I-9 choice and Wednesday slot (#11A), representative (#11B, which then
-unlocks the step), fingerprint appointment and ATI number (#12). Staff see the answers, and the step advances.
+**Phase 5: Scheduling and candidate responses.** Re-scoped 2026-10-23: AggieOnboard is the one stop shop, so
+anything that needs an appointment is **booked in the app**, not replied to by email, and whoever runs each
+appointment sees who is coming, when and where.
+
+Decisions (2026-10-23): all four appointment types are booked in the app; rosters belong to **owner teams**;
+candidates **book, change and cancel** up to a cutoff, with confirmation/change/cancel emails carrying a calendar
+invite and a reminder the day before; reply-by-email wording in 11A/11B/12 gets new template versions that point
+to the checklist, drafted by us and listed for review.
+
+| Appointment | Owner team | Locations | Availability | Window (✱ unconfirmed) | Attendance completes the step? |
+|---|---|---|---|---|---|
+| In-person I-9 (Section 2) | SSO I-9 desk | 10850 White Rock Road, Rancho Cordova | Weekly hours: Wednesdays 8–2 ✱ | Before the clearance deadline ✱ | Yes |
+| Fingerprinting (Live Scan) | UC Davis Health PD; UC Davis Campus PD | Sacramento; Davis (addresses ✱) | Weekly hours ✱ (owners set them) | Before the clearance deadline (message 12) | No: the ATI number and clearance follow |
+| Employee Health (OEHC) | Employee Health | Sacramento (address ✱) | Weekly hours ✱ | At least two weeks before start (message 9) | No: clearance follows |
+| New Employee Welcome | Learning and Development | Education Building, Sacramento campus | Dated sessions with seats (twice a month) | Within 30 days after start (message 13) | Yes |
+
+Hours, capacities and addresses nobody has confirmed are **not seeded in production**; the sandbox gets clearly
+labelled stand-ins. Every window and the change cutoff (default 24 hours) are data.
+
+Model: **Team** (+ staff membership); **AppointmentType** (step it fulfils, owner team, length, booking window as
+two `DeadlineRule`s, change cutoff, completes-on-attendance); **Location**; availability as **weekly hours** (day,
+start, end, slot length, capacity), **sessions** (a dated block with seats, for NEW or extra hours) and
+**closures** (plus the holiday table); **Appointment** (candidate, type, location, start/end, status
+Booked → Attended / No-show / Cancelled, who booked or changed it, reminder sent). Booking checks capacity in a
+serializable transaction so two people can't take the last seat.
+
+Access: a staff member with journey role "Team member" signs in to the **schedule only** (no pipeline, no candidate
+records beyond their roster). Team members manage their team's hours, sessions and closures and see its day
+roster; onboarding specialists and other journey staff see their candidates' appointments and can book or change
+on a candidate's behalf; admins manage every team.
+
+Step linkage: booking moves the step to Waiting (the candidate has done their part); cancelling moves it back to
+Action needed; marking attended completes it where the table says so. Booking in-person I-9 sets the I-9 method.
+
+- **5a, the schedule:** ✅ 2026-10-23. Built as described, plus: a third sandbox sign-in, Schedule User (police-
+  department team member, schedule only); staff booking from the candidate page; removing a session or closing a
+  day with bookings on it is refused until they're moved. Schedule times are stored as Pacific wall-clock times. A
+  booking race on SQL Server is resolved by the serializable transaction: the loser is SQL Server's deadlock victim
+  (1205) and gets "That time was just taken" (verified: six simultaneous races, one winner each). Assumptions flagged
+  for SSO: I-9 slots are 15 minutes, one candidate at a time. Planned: teams and team access; types, locations, weekly hours, sessions, closures; the slot
+  engine; staff booking on a candidate's behalf; the **day roster** per team and location (attended / no-show /
+  cancel / reschedule). *Demo: an I-9 desk member sets Wednesday hours and sees tomorrow's roster.*
+- **5b, candidate booking:** pick a location and time in the portal within the window; change or cancel until the
+  cutoff; confirmation, change and cancellation emails with an .ics invite; day-before reminders from a background
+  job. *Demo: a candidate books fingerprinting and it appears on the police department's roster.*
+- **5c, the other answers:** the I-9 choice (in person → book; remote → representative's name and email, which
+  starts 11B), the ATI number after fingerprinting, and new template versions of 11A, 11B and 12 that point to the
+  checklist.
 
 **Phase 6: Admin.** Template editor (versioned, with merge-field validation), settings and holiday
 calendar, staff user management.

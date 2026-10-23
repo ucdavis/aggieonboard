@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, Navigate } from '@tanstack/react-router';
+import { useUser } from '@/shared/auth/UserContext.tsx';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useMemo } from 'react';
 import {
@@ -21,6 +22,15 @@ export const Route = createFileRoute('/(authenticated)/')({
 });
 
 function PipelinePage() {
+  // Someone who only runs appointments has no pipeline; their home is the schedule.
+  return useUser().roles.includes('Staff') ? (
+    <Pipeline />
+  ) : (
+    <Navigate replace to="/schedule" />
+  );
+}
+
+function Pipeline() {
   const { mine = false } = Route.useSearch();
   const { data, error, isPending } = useQuery(pipelineQueryOptions(mine));
   const columns = useMemo(() => pipelineColumns, []);

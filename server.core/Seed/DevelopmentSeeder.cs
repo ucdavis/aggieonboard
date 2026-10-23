@@ -32,6 +32,9 @@ public static class DevelopmentSeeder
     /// </summary>
     public const string SandboxStaffEmail = "sample@example.test";
 
+    /// <summary>The sandbox's "Schedule User": a police-department team member who sees only the schedule.</summary>
+    public const string SandboxSchedulerEmail = "scheduler@example.test";
+
     public static async Task SeedAsync(AppDbContext db, DateTimeOffset now, CancellationToken ct = default)
     {
         // Added on its own so an existing sandbox database picks it up too.
@@ -48,6 +51,8 @@ public static class DevelopmentSeeder
             db.Staff.Add(sandboxStaff);
             await db.SaveChangesAsync(ct);
         }
+
+        await EnsureSandboxTeamsAsync(db, sandboxStaff, ct);
 
         if (await db.Candidates.AnyAsync(ct)) return;
 
@@ -71,7 +76,8 @@ public static class DevelopmentSeeder
         var recruiter = Staff("Chris Alvarez", StaffRole.Recruiter);
         var specialist = Staff("Pat Kim", StaffRole.OnboardingSpecialist, "916-555-0142");
         var specialist2 = Staff("Jamie Fox", StaffRole.OnboardingSpecialist);
-        db.Staff.AddRange(ra, recruiter, specialist, specialist2, Staff("Robin Hale", StaffRole.LearningAndDevelopment));
+        var learning = Staff("Robin Hale", StaffRole.LearningAndDevelopment);
+        db.Staff.AddRange(ra, recruiter, specialist, specialist2, learning);
 
         Candidate New(string first, string last, string position, string department, StaffMember? onboarding = null)
         {
@@ -165,6 +171,9 @@ public static class DevelopmentSeeder
 
         await db.SaveChangesAsync(ct);
 
+        await SeedScheduleAsync(db, now, calendar, ct, learning, specialist, (casey, "fingerprinting", "health-pd"),
+            (morgan, "employee-health", "oehc"), (avery, "new-employee-welcome", "learning"), (riley, "i9", "i9-desk"));
+
         StaffMember Staff(string name, StaffRole role, string? phone = null) => new()
         {
             Name = name,
@@ -178,6 +187,110 @@ public static class DevelopmentSeeder
             CandidateJourney.AddSteps(candidate, definitions);
             return new JourneyBuilder(candidate, now, deadlines, candidate.RecruitingAssistant);
         }
+    }
+
+    /// <summary>Schedule User and the sandbox's team memberships. Added on their own so an existing sandbox picks them up.</summary>
+    private static async Task EnsureSandboxTeamsAsync(AppDbContext db, StaffMember sample, CancellationToken ct)
+    {
+        var scheduler = await db.Staff.SingleOrDefaultAsync(s => s.Email == SandboxSchedulerEmail, ct);
+        if (scheduler is null)
+        {
+            scheduler = new StaffMember { Name = "Schedule User", Email = SandboxSchedulerEmail, Role = StaffRole.TeamMember };
+            db.Staff.Add(scheduler);
+            await db.SaveChangesAsync(ct);
+        }
+
+        var teams = await db.Teams.ToDictionaryAsync(t => t.Key, ct);
+        await JoinAsync(db, sample, teams["i9-desk"], ct);
+        await JoinAsync(db, scheduler, teams["health-pd"], ct);
+        await JoinAsync(db, scheduler, teams["campus-pd"], ct);
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task JoinAsync(AppDbContext db, StaffMember staff, Team team, CancellationToken ct)
+    {
+        var exists = await db.Set<TeamMembership>().AnyAsync(m => m.TeamId == team.Id && m.StaffMemberId == staff.Id, ct);
+        if (!exists) db.Set<TeamMembership>().Add(new TeamMembership { TeamId = team.Id, StaffMemberId = staff.Id });
+    }
+
+    /// <summary>
+    /// Stand-in hours for the locations nobody has confirmed, New Employee Welcome sessions every other
+    /// Tuesday, and a few bookings so every roster has someone on it. All fictional.
+    /// </summary>
+    private static async Task SeedScheduleAsync(
+        AppDbContext db, DateTimeOffset now, BusinessCalendar calendar, CancellationToken ct,
+        StaffMember learning, StaffMember oehcStaff, params (Candidate Candidate, string StepKey, string TeamKey)[] bookings)
+    {
+        var locations = await db.Locations.Include(l => l.Team).Include(l => l.Hours).Include(l => l.AppointmentType)
+            .ToDictionaryAsync(l => l.Team!.Key, ct);
+        var teams = await db.Teams.ToDictionaryAsync(t => t.Key, ct);
+        await JoinAsync(db, learning, teams["learning"], ct);
+        await JoinAsync(db, oehcStaff, teams["oehc"], ct);
+
+        void Hours(string team, TimeOnly start, TimeOnly end, int minutes, int capacity, params DayOfWeek[] days)
+        {
+            if (locations[team].Hours.Count > 0) return;
+            locations[team].Hours.AddRange(days.Select(d => new WeeklyHours { Day = d, Start = start, End = end, SlotMinutes = minutes, Capacity = capacity }));
+        }
+
+        var weekdays = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
+        Hours("health-pd", new(9, 0), new(12, 0), 15, 1, weekdays);
+        Hours("campus-pd", new(13, 0), new(16, 0), 30, 1, DayOfWeek.Tuesday, DayOfWeek.Thursday);
+        Hours("oehc", new(8, 0), new(11, 30), 30, 2, weekdays);
+
+        var today = DateOnly.FromDateTime(BusinessCalendar.ToPacific(now));
+        var firstTuesday = Next(today, DayOfWeek.Tuesday);
+        var sessions = Enumerable.Range(0, 4).Select(i => new ScheduleSession
+        {
+            LocationId = locations["learning"].Id,
+            Start = firstTuesday.AddDays(14 * i).ToDateTime(new TimeOnly(8, 0)),
+            End = firstTuesday.AddDays(14 * i).ToDateTime(new TimeOnly(12, 0)),
+            Capacity = 40,
+            Note = "Sandbox stand-in session",
+        }).ToList();
+        db.ScheduleSessions.AddRange(sessions);
+
+        var businessToday = calendar.IsBusinessDay(today) ? today : calendar.AddBusinessDays(today, 1);
+        var lastWednesday = Next(today.AddDays(-8), DayOfWeek.Wednesday); // within the past week, never today
+        var starts = new Dictionary<string, DateTime>
+        {
+            ["health-pd"] = calendar.AddBusinessDays(today, 1).ToDateTime(new TimeOnly(9, 0)),
+            ["oehc"] = businessToday.ToDateTime(new TimeOnly(10, 0)),
+            ["learning"] = sessions[0].Start,
+            ["i9-desk"] = lastWednesday.ToDateTime(new TimeOnly(9, 0)),
+        };
+
+        foreach (var (candidate, stepKey, teamKey) in bookings)
+        {
+            var location = locations[teamKey];
+            var step = candidate.Steps.Single(s => s.Step!.Key == stepKey);
+            var start = starts[teamKey];
+            var length = teamKey == "learning" ? sessions[0].End - sessions[0].Start : TimeSpan.FromMinutes(location.Hours.FirstOrDefault()?.SlotMinutes ?? 30);
+            var attended = step.Status == StepStatus.Complete;
+            db.Appointments.Add(new Appointment
+            {
+                CandidateId = candidate.Id,
+                AppointmentTypeId = location.AppointmentTypeId,
+                LocationId = location.Id,
+                Start = start,
+                End = start + length,
+                Status = attended ? AppointmentStatus.Attended : AppointmentStatus.Booked,
+                BookedAt = now.AddDays(-3),
+                BookedBy = "Candidate",
+                StatusChangedAt = attended ? now.AddDays(-2) : null,
+                StatusChangedBy = attended ? "Sample User" : null,
+            });
+            if (step.Status == StepStatus.ActionNeeded) CandidateJourney.MarkWaiting(step);
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>The first <paramref name="day"/> strictly after <paramref name="date"/>.</summary>
+    private static DateOnly Next(DateOnly date, DayOfWeek day)
+    {
+        var ahead = ((int)day - (int)date.DayOfWeek + 7) % 7;
+        return date.AddDays(ahead == 0 ? 7 : ahead);
     }
 
     private static CandidateQualification License(string name, string document) =>

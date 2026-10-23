@@ -80,7 +80,23 @@ public class AuthenticationHelperTests : IDisposable
         var signedIn = await ValidateToken(CreatePrincipal());
 
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist", "Admin");
+            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist", "Scheduling", "Admin");
+    }
+
+    [Fact]
+    public async Task A_team_member_gets_the_schedule_but_not_the_pipeline()
+    {
+        var staff = Db.Staff.Single();
+        staff.Role = StaffRole.TeamMember;
+        var team = new Team { Key = "health-pd", Name = "UC Davis Health Police Department" };
+        Db.Teams.Add(team);
+        await Db.SaveChangesAsync();
+        Db.Set<TeamMembership>().Add(new TeamMembership { TeamId = team.Id, StaffMemberId = staff.Id });
+        await Db.SaveChangesAsync();
+
+        var signedIn = await ValidateToken(CreatePrincipal());
+
+        signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value).Should().BeEquivalentTo("TeamMember", "Scheduling");
     }
 
     [Fact]

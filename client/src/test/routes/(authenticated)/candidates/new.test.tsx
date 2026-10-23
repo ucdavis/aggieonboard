@@ -4,7 +4,7 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mswUtils.ts';
 import { renderRoute } from '@/test/routerUtils.tsx';
-import { candidate, meAsStaff } from '@/test/staffFixtures.ts';
+import { candidate, meAsStaff, noAppointments } from '@/test/staffFixtures.ts';
 
 const staffMembers = () =>
   http.get('/api/staff/members', () =>
@@ -42,6 +42,7 @@ describe('new candidate route', () => {
     let posts = 0;
     server.use(
       meAsStaff(),
+      noAppointments(),
       staffMembers(),
       http.post('/api/staff/candidates', () => {
         posts += 1;
@@ -70,6 +71,7 @@ describe('new candidate route', () => {
     let body: Record<string, unknown> | undefined;
     server.use(
       meAsStaff(),
+      noAppointments(),
       staffMembers(),
       http.post('/api/staff/candidates', async ({ request }) => {
         body = (await request.json()) as Record<string, unknown>;
@@ -116,6 +118,7 @@ describe('new candidate route', () => {
   it('puts the server’s field errors on the matching fields', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       staffMembers(),
       http.post('/api/staff/candidates', () =>
         HttpResponse.json(

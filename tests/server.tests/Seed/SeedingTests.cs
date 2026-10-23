@@ -117,7 +117,7 @@ public class SeedingTests
         await DevelopmentSeeder.SeedAsync(db, Now.AddDays(1));
 
         (await db.Candidates.CountAsync()).Should().Be(8);
-        (await db.Staff.CountAsync()).Should().Be(6);
+        (await db.Staff.CountAsync()).Should().Be(7);
     }
 
     [Fact]

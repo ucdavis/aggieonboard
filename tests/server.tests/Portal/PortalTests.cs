@@ -204,7 +204,7 @@ public class PortalTests : IAsyncLifetime
         var anonymous = typeof(PortalController).GetMethods()
             .Where(m => m.GetCustomAttribute<AllowAnonymousAttribute>() != null)
             .Select(m => m.Name);
-        anonymous.Should().BeEquivalentTo("SignIn", "RequestLink", "SignOut");
+        anonymous.Should().BeEquivalentTo("SignIn", "RequestLink", "SignOutOfPortal");
     }
 
     [Fact]

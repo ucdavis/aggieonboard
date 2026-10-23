@@ -8,6 +8,7 @@ using Server.Core.Data;
 using Server.Core.Journey;
 using Server.Core.Messaging;
 using Server.Core.Portal;
+using Server.Core.Scheduling;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using Server.Core.Notification;
@@ -75,6 +76,7 @@ try
             _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
     });
     builder.Services.AddScoped<JourneyService>();
+    builder.Services.AddScoped<SchedulingService>();
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)

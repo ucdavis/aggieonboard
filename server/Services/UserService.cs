@@ -52,7 +52,13 @@ public class UserService : IUserService
         var staff = await GetStaffMemberAsync(principal);
         if (staff is null) return [];
 
-        var roles = new List<string> { AppRoles.Staff, staff.Role.ToString() };
+        // A team member signs in to the schedule only; everyone else also gets the pipeline.
+        var roles = new List<string> { staff.Role.ToString() };
+        if (staff.Role != StaffRole.TeamMember) roles.Add(AppRoles.Staff);
+        if (staff.IsAdmin || await _dbContext.Set<TeamMembership>().AnyAsync(m => m.StaffMemberId == staff.Id))
+        {
+            roles.Add(AppRoles.Scheduling);
+        }
         if (staff.IsAdmin) roles.Add(AppRoles.Admin);
         return roles;
     }

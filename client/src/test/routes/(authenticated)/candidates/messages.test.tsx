@@ -4,7 +4,12 @@ import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { server } from '@/test/mswUtils.ts';
 import { renderRoute } from '@/test/routerUtils.tsx';
-import { candidate, meAsStaff, messagePreview } from '@/test/staffFixtures.ts';
+import {
+  candidate,
+  meAsStaff,
+  noAppointments,
+  messagePreview,
+} from '@/test/staffFixtures.ts';
 
 const openPreview = async () => {
   await screen.findByRole('heading', { name: 'Alex Rivera' });
@@ -19,6 +24,7 @@ describe('candidate messages', () => {
   it('shows what is missing and will not send until it is fixed', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () => HttpResponse.json(candidate())),
       http.get(
         '/api/staff/candidates/1/messages/references-request/preview',
@@ -67,6 +73,7 @@ describe('candidate messages', () => {
     let sends = 0;
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () => HttpResponse.json(candidate())),
       http.get(
         '/api/staff/candidates/1/messages/references-request/preview',
@@ -106,6 +113,7 @@ describe('candidate messages', () => {
   it('offers no send for a vendor’s wording', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () => HttpResponse.json(candidate())),
       http.get(
         '/api/staff/candidates/1/messages/skillsurvey-request/preview',
@@ -147,6 +155,7 @@ describe('candidate messages', () => {
   it('opens a sent message exactly as it went out', async () => {
     server.use(
       meAsStaff(),
+      noAppointments(),
       http.get('/api/staff/candidates/1', () =>
         HttpResponse.json(
           candidate({

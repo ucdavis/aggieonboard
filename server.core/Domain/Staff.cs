@@ -19,6 +19,8 @@ public class StaffMember
     /// <summary>May edit templates, settings and the staff list (Phase 6). Independent of <see cref="Role"/>.</summary>
     public bool IsAdmin { get; set; }
 
+    public List<TeamMembership> Teams { get; set; } = [];
+
     /// <summary>
     /// How messages offer this person as a contact. The audit writes "Contact me at [contact]" and
     /// "Questions? Contact [RA].", so this is the address alone, "or" the phone when there is one.
@@ -32,9 +34,12 @@ public class StaffMember
 /// </summary>
 public static class AppRoles
 {
-    /// <summary>Every active staff member: the pipeline and candidate records.</summary>
+    /// <summary>Journey staff (everyone but a <see cref="StaffRole.TeamMember"/>): the pipeline and candidate records.</summary>
     public const string Staff = "Staff";
 
-    /// <summary>Templates, settings and the staff list.</summary>
+    /// <summary>Templates, settings and the staff list. Also every team's schedule.</summary>
     public const string Admin = "Admin";
+
+    /// <summary>Members of a team that runs appointments: its hours and day roster.</summary>
+    public const string Scheduling = "Scheduling";
 }

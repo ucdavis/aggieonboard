@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Server.Core.Domain;
 using Server.Core.Journey;
 using Server.Core.Messaging;
+using Server.Core.Scheduling;
 using Server.Services;
 
 namespace Server.Controllers.Staff;
@@ -9,8 +10,11 @@ namespace Server.Controllers.Staff;
 public sealed record StepActionRequest(string? Reason);
 public sealed record StepDueRequest(DateOnly? Date, TimeOnly? Time);
 public sealed record StepNoteRequest(string? Note);
+public sealed record BookingRequest(string TypeKey, int LocationId, DateTime Start);
+public sealed record CancelAppointmentRequest(string? Reason);
 
-public class StaffController(JourneyService journey, MessageService messages, IUserService users) : StaffControllerBase
+public class StaffController(JourneyService journey, MessageService messages, SchedulingService scheduling, IUserService users)
+    : StaffControllerBase
 {
     [HttpGet("members")]
     public async Task<IReadOnlyList<StaffSummary>> Members(CancellationToken ct) => await journey.GetStaffAsync(ct);
@@ -83,6 +87,37 @@ public class StaffController(JourneyService journey, MessageService messages, IU
         AsStaff(async me => await messages.SendAsync(id, SystemMessages.PortalLink, me, ct)
             ? Found(await journey.GetCandidateAsync(id, ct))
             : NotFound(), ct);
+
+    /// <summary>The appointment types that apply to the candidate, each with its current and past bookings.</summary>
+    [HttpGet("candidates/{id:int}/appointments")]
+    public async Task<IReadOnlyList<CandidateAppointmentType>> Appointments(int id, CancellationToken ct) =>
+        await scheduling.GetCandidateAppointmentsAsync(id, ct);
+
+    /// <summary>Open times for one type within the candidate's window, between two dates.</summary>
+    [HttpGet("candidates/{id:int}/appointments/{typeKey}/options")]
+    public async Task<ActionResult<BookingOptions>> AppointmentOptions(
+        int id, string typeKey, [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct) =>
+        await scheduling.GetOptionsAsync(id, typeKey, from, to, ct) is { } options ? options : NotFound();
+
+    /// <summary>Books on the candidate's behalf, replacing their current booking of that type.</summary>
+    [HttpPost("candidates/{id:int}/appointments")]
+    public async Task<ActionResult<AppointmentSummary>> Book(int id, BookingRequest request, CancellationToken ct)
+    {
+        var me = await users.GetStaffMemberAsync(User, ct);
+        if (me is null) return Forbid();
+        return await scheduling.BookAsync(id, request.TypeKey, request.LocationId, request.Start, new SchedulingActor(me), ct);
+    }
+
+    [HttpPost("candidates/{id:int}/appointments/{appointmentId:int}/cancel")]
+    public async Task<ActionResult<AppointmentSummary>> CancelAppointment(
+        int id, int appointmentId, CancelAppointmentRequest request, CancellationToken ct)
+    {
+        var me = await users.GetStaffMemberAsync(User, ct);
+        if (me is null) return Forbid();
+        // asCandidateId scopes the appointment to this candidate; staff are never held to the cutoff.
+        return await scheduling.CancelAsync(appointmentId, new SchedulingActor(me), request.Reason, asCandidateId: id, ct)
+            is { } cancelled ? cancelled : NotFound();
+    }
 
     /// <summary>A message exactly as it went out.</summary>
     [HttpGet("candidates/{id:int}/sent/{sentId:int}")]

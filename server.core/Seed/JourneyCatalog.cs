@@ -220,6 +220,73 @@ public static class JourneyCatalog
         new() { Date = new(2027, 9, 6), Name = "Labor Day" },
     ];
 
+    public static IReadOnlyList<Team> Teams() =>
+    [
+        new() { Key = "i9-desk", Name = "SSO I-9 desk" },
+        new() { Key = "health-pd", Name = "UC Davis Health Police Department" },
+        new() { Key = "campus-pd", Name = "UC Davis Campus Police Department" },
+        new() { Key = "oehc", Name = "Employee Health (OEHC)" },
+        new() { Key = "learning", Name = "Learning and Development" },
+    ];
+
+    /// <summary>A location to seed, by its team's key.</summary>
+    public sealed record SeedLocation(string TypeKey, string TeamKey, string Name, string? Address, IReadOnlyList<WeeklyHours> Hours);
+
+    /// <summary>
+    /// What candidates book. Windows quote the audit where it gives one; the rest is flagged
+    /// unconfirmed. Hours are seeded only where the audit states them (I-9: Wednesdays 8–2).
+    /// </summary>
+    public static IReadOnlyList<AppointmentType> AppointmentTypes() =>
+    [
+        new()
+        {
+            Key = "i9-in-person", Name = "In-person I-9 verification", StepKey = "i9",
+            Latest = DeadlineRule.Clearance, CompletesStepOnAttendance = true,
+            WindowQuestion = "SSO: confirm the in-person location, days and hours, how many candidates one slot takes, and "
+                + "the latest an I-9 appointment may be (audit #11).",
+        },
+        new()
+        {
+            Key = "fingerprinting", Name = "Fingerprinting (Live Scan)", StepKey = "fingerprinting",
+            // Message 12: "the earliest appointment that allows you to meet your pre-employment clearance deadline".
+            Latest = DeadlineRule.Clearance,
+            WindowQuestion = "SSO: before an employee starts, must fingerprinting be scheduled, attended or cleared? Police "
+                + "departments: confirm hours, addresses and that appointments can be booked here (audit #12).",
+        },
+        new()
+        {
+            Key = "employee-health", Name = "Employee Health screening", StepKey = "employee-health",
+            // Message 9: "You must attend the appointment at least two weeks before your start date."
+            Latest = DeadlineRule.BeforeStart(14, DeadlineUnit.CalendarDays),
+            WindowQuestion = "OEHC: confirm hours, the address, and booking here instead of calling the candidate. SSO: "
+                + "confirm OEHC timing and its connection to the I-9 (audit #9).",
+        },
+        new()
+        {
+            Key = "new-employee-welcome", Name = "New Employee Welcome", StepKey = "new-employee-welcome",
+            // Message 13: "attendance is required within your first 30 days of employment".
+            Earliest = DeadlineRule.AfterStart(0, DeadlineUnit.CalendarDays),
+            Latest = DeadlineRule.AfterStart(30, DeadlineUnit.CalendarDays),
+            CompletesStepOnAttendance = true,
+            WindowQuestion = "L&D: confirm session dates and seats, and whether candidates may choose a session (L&D assigns "
+                + "one automatically today) (audit #13–14).",
+        },
+    ];
+
+    public static IReadOnlyList<SeedLocation> Locations() =>
+    [
+        new("i9-in-person", "i9-desk", "Rancho Cordova", "10850 White Rock Road, Rancho Cordova, CA 95670",
+        [
+            // Message 11A: "Appointments are available on Wednesdays from 8 a.m.–2 p.m." The 15-minute length and
+            // one-at-a-time capacity are assumptions (docs/PLAN.md).
+            new() { Day = DayOfWeek.Wednesday, Start = new(8, 0), End = new(14, 0), SlotMinutes = 15, Capacity = 1 },
+        ]),
+        new("fingerprinting", "health-pd", "UC Davis Health Police Department, Sacramento", null, []),
+        new("fingerprinting", "campus-pd", "UC Davis Campus Police Department, Davis", null, []),
+        new("employee-health", "oehc", "Employee Health (OEHC), Sacramento", null, []),
+        new("new-employee-welcome", "learning", "Education Building, UC Davis Health Sacramento campus", null, []),
+    ];
+
     /// <summary>The audit's rewritten messages, from the Markdown files embedded under Seed/Messages.</summary>
     public static IReadOnlyList<MessageTemplateFile> Messages()
     {

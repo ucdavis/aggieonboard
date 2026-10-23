@@ -139,3 +139,9 @@ export const messagePreview = (
   to: 'alex.rivera@example.test',
   ...overrides,
 });
+
+/** The candidate page also loads appointments; most tests want none. */
+export const noAppointments = () =>
+  http.get('/api/staff/candidates/:id/appointments', () =>
+    HttpResponse.json([])
+  );

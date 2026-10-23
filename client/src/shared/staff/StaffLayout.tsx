@@ -3,12 +3,15 @@ import { useUser } from '@/shared/auth/UserContext.tsx';
 import { AccessUnavailable } from './AccessUnavailable.tsx';
 
 /**
- * The staff app's frame. Only staff whitelist members (role "Staff") get past it; the API enforces
- * the same rule, so this only decides what an outsider sees.
+ * The staff app's frame. Journey staff ("Staff") get the pipeline; members of a team that runs
+ * appointments ("Scheduling") get the schedule; someone with neither sees Access unavailable. The
+ * API enforces the same rules, so this only decides what each person is offered.
  */
 export function StaffLayout() {
   const user = useUser();
-  if (!user.roles.includes('Staff')) {
+  const journey = user.roles.includes('Staff');
+  const scheduling = user.roles.includes('Scheduling');
+  if (!journey && !scheduling) {
     return <AccessUnavailable />;
   }
 
@@ -20,19 +23,32 @@ export function StaffLayout() {
             AggieOnboard
           </Link>
           <nav aria-label="Main" className="flex gap-4 text-sm">
-            <Link
-              activeOptions={{ exact: true, includeSearch: false }}
-              activeProps={{ className: 'underline underline-offset-4' }}
-              to="/"
-            >
-              Pipeline
-            </Link>
-            <Link
-              activeProps={{ className: 'underline underline-offset-4' }}
-              to="/candidates/new"
-            >
-              New candidate
-            </Link>
+            {journey && (
+              <>
+                <Link
+                  activeOptions={{ exact: true, includeSearch: false }}
+                  activeProps={{ className: 'underline underline-offset-4' }}
+                  to="/"
+                >
+                  Pipeline
+                </Link>
+                <Link
+                  activeProps={{ className: 'underline underline-offset-4' }}
+                  to="/candidates/new"
+                >
+                  New candidate
+                </Link>
+              </>
+            )}
+            {scheduling && (
+              <Link
+                activeOptions={{ includeSearch: false }}
+                activeProps={{ className: 'underline underline-offset-4' }}
+                to="/schedule"
+              >
+                Schedule
+              </Link>
+            )}
           </nav>
           <p className="ml-auto text-sm opacity-90">{user.name}</p>
         </div>

@@ -18,6 +18,7 @@ import {
   MessagePreviewDialog,
   SentMessageDialog,
 } from '@/shared/staff/MessageDialogs.tsx';
+import { Appointments } from '@/shared/staff/Appointments.tsx';
 import { StepRow } from '@/shared/staff/StepRow.tsx';
 
 export const Route = createFileRoute(
@@ -106,6 +107,7 @@ function CandidatePage() {
           <h2 className="sr-only" id="journey-heading">
             Journey
           </h2>
+          <Appointments candidateId={id} />
           {phases.map((phase) => (
             <div className="space-y-3" key={phase}>
               <h3 className="text-lg font-semibold">{phaseLabel[phase]}</h3>

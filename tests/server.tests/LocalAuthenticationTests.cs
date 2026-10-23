@@ -79,6 +79,7 @@ public class LocalAuthenticationTests
         sample.IsInRole("SampleRole").Should().BeTrue();
         basic.IsInRole("User").Should().BeTrue();
         basic.IsInRole("SampleRole").Should().BeFalse();
+        LocalAuthentication.CreatePrincipal("scheduler")!.FindFirst("preferred_username")!.Value.Should().Be("scheduler@example.test");
     }
 
     [Theory]

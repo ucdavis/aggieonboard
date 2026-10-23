@@ -123,3 +123,49 @@ export const errorMessage = (error: unknown) => {
 /** "Message 4" for the audit's messages; the app's own messages (audit "portal") have no number. */
 export const messageLabel = (auditReference: string) =>
   auditReference === 'portal' ? 'Sign-in link' : `Message ${auditReference}`;
+
+/** "2026-10-27T09:15:00" → { date: "2026-10-27", time: "09:15:00" }, with no time-zone conversion. */
+const splitLocal = (value: string) => {
+  const [date, time = '00:00:00'] = value.split('T');
+  return { date, time };
+};
+
+/** A schedule time, read as written: "9:15 a.m." */
+export const formatClock = (value: string) =>
+  formatTime(splitLocal(value).time);
+
+/** A schedule time's day: "Tue, Oct 27, 2026". */
+export const formatDay = (value: string) => formatDate(splitLocal(value).date);
+
+/** "Tue, Oct 27, 2026, 9:15–9:30 a.m." */
+export const formatAppointment = (start: string, end: string) =>
+  `${formatDay(start)}, ${formatClock(start).replace(/ [ap]\.m\.$/, (m) =>
+    formatClock(end).endsWith(m) ? '' : m
+  )}–${formatClock(end)}`;
+
+export const appointmentStatusLabel: Record<string, string> = {
+  Attended: 'Attended',
+  Booked: 'Booked',
+  Cancelled: 'Cancelled',
+  NoShow: 'No-show',
+};
+
+export const appointmentStatusBadge: Record<string, string> = {
+  Attended: 'badge-success',
+  Booked: 'badge-info',
+  Cancelled: 'badge-ghost',
+  NoShow: 'badge-error',
+};
+
+/** Today in Pacific time as "2026-10-23", for date inputs and roster defaults. */
+export const pacificToday = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(
+    new Date()
+  );
+
+/** "2026-10-23" plus days, in calendar terms. */
+export const addDays = (date: string, days: number) => {
+  const [y, m, d] = date.split('-').map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + days));
+  return next.toISOString().slice(0, 10);
+};

@@ -72,7 +72,7 @@ public class PortalController(PortalService portal, PortalTokens tokens) : Contr
 
     [AllowAnonymous]
     [HttpPost("sign-out")]
-    public async Task<IActionResult> SignOut()
+    public async Task<IActionResult> SignOutOfPortal()
     {
         await HttpContext.SignOutAsync(CandidateAuthentication.Scheme);
         return NoContent();
