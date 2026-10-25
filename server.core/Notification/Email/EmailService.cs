@@ -123,6 +123,29 @@ public sealed class EmailService : IEmailService
 
     private static MimeEntity CreateBody(EmailMessage message)
     {
+        var body = CreateTextBody(message);
+        if (message.Attachments.Count == 0)
+        {
+            return body;
+        }
+
+        var mixed = new Multipart("mixed") { body };
+        foreach (var attachment in message.Attachments)
+        {
+            mixed.Add(new MimePart(ContentType.Parse(attachment.ContentType))
+            {
+                Content = new MimeContent(new MemoryStream(attachment.Content)),
+                ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                ContentTransferEncoding = ContentEncoding.Base64,
+                FileName = attachment.FileName,
+            });
+        }
+
+        return mixed;
+    }
+
+    private static MimeEntity CreateTextBody(EmailMessage message)
+    {
         var textBody = new TextPart("plain")
         {
             Text = message.TextBody,

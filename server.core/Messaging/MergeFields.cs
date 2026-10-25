@@ -50,6 +50,13 @@ public static partial class MergeFields
 
         // The portal
         new("PortalLinkLifetime", "How long an emailed checklist link works, in words: \"14 days\"."),
+
+        // Appointments: only the app's appointment emails have one
+        new("AppointmentName", "What the appointment is for: \"Fingerprinting (Live Scan)\"."),
+        new("AppointmentTime", "Its day and time: \"Wednesday, October 28, 2026, 9:15–9:30 a.m.\"."),
+        new("AppointmentPlace", "The location's name, and its address when there is one."),
+        new("AppointmentChangeDeadline", "Until when the candidate can change or cancel it online."),
+        new("PreviousAppointmentTime", "The time it moved from (the change email)."),
     ];
 
     public static readonly IReadOnlySet<string> Names = All.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);

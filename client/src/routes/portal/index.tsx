@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { HttpError } from '@/lib/api.ts';
 import { formatDate, formatDue } from '@/lib/journey.ts';
@@ -11,6 +12,7 @@ import {
 } from '@/queries/portal.ts';
 import { PortalFrame } from '@/shared/portal/PortalFrame.tsx';
 import { SignedOut } from '@/shared/portal/SignedOut.tsx';
+import { StepBooking } from '@/shared/portal/StepBooking.tsx';
 
 export const Route = createFileRoute('/portal/')({
   component: PortalPage,
@@ -32,6 +34,7 @@ function PortalPage() {
   const { data: view, error, isPending } = useQuery(portalQueryOptions());
   const signOut = useSignOut();
   const queryClient = useQueryClient();
+  const [notice, setNotice] = useState<string | null>(null);
 
   if (error instanceof HttpError && error.status === 401) {
     return (
@@ -69,6 +72,18 @@ function PortalPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {notice && (
+            <div className="alert alert-success" role="status">
+              <span>{notice}</span>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setNotice(null)}
+                type="button"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold">Your onboarding checklist</h1>
             <p className="text-lg">
@@ -112,7 +127,7 @@ function PortalPage() {
                 {steps.length ? (
                   <ul className="space-y-3">
                     {steps.map((step) => (
-                      <StepCard key={step.key} step={step} />
+                      <StepCard key={step.key} onDone={setNotice} step={step} />
                     ))}
                   </ul>
                 ) : (
@@ -129,7 +144,13 @@ function PortalPage() {
   );
 }
 
-function StepCard({ step }: { step: PortalStep }) {
+function StepCard({
+  onDone,
+  step,
+}: {
+  onDone: (message: string) => void;
+  step: PortalStep;
+}) {
   return (
     <li className="card bg-base-100 shadow-sm">
       <div className="card-body gap-3 p-4 sm:p-6">
@@ -145,6 +166,7 @@ function StepCard({ step }: { step: PortalStep }) {
             {formatDue(step.dueDate, step.dueTime)}
           </p>
         )}
+        {step.booking && <StepBooking booking={step.booking} onDone={onDone} />}
         {step.watchFor && (
           <div className="rounded-box bg-base-200 p-3 text-sm">
             <p>

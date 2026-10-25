@@ -77,6 +77,12 @@ try
     });
     builder.Services.AddScoped<JourneyService>();
     builder.Services.AddScoped<SchedulingService>();
+    builder.Services.AddOptions<SchedulingOptions>().Bind(builder.Configuration.GetSection(SchedulingOptions.SectionName));
+    builder.Services.AddScoped<AppointmentReminders>();
+    if (builder.Configuration.GetValue(SchedulingOptions.SectionName + ":" + nameof(SchedulingOptions.SendReminders), true))
+    {
+        builder.Services.AddHostedService<AppointmentReminderJob>();
+    }
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)

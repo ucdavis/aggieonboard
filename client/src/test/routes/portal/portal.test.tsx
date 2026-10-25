@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import type { PortalStep, PortalView } from '@/queries/portal.ts';
+import type {
+  PortalAppointment,
+  PortalStep,
+  PortalView,
+} from '@/queries/portal.ts';
+import type { BookingOptions } from '@/queries/schedule.ts';
 import { server } from '@/test/mswUtils.ts';
 import { renderRoute } from '@/test/routerUtils.tsx';
 
@@ -10,6 +15,7 @@ import { renderRoute } from '@/test/routerUtils.tsx';
 // staff endpoint such as /api/user/me.
 
 const portalStep = (overrides: Partial<PortalStep> = {}): PortalStep => ({
+  booking: null,
   completedAt: null,
   contact: { details: 'pat.kim@example.test or 916-555-0142', name: 'Pat Kim' },
   dueDate: '2026-10-26',
@@ -194,6 +200,179 @@ describe('candidate portal', () => {
       expect(
         await screen.findByRole('button', { name: 'Email me a new link' })
       ).toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+const fingerprinting = (
+  appointment: PortalAppointment | null,
+  canBook = true
+): PortalStep =>
+  portalStep({
+    booking: {
+      appointment,
+      canBook,
+      typeKey: 'fingerprinting',
+      typeName: 'Fingerprinting (Live Scan)',
+    },
+    key: 'fingerprinting',
+    state: appointment ? 'InProgress' : 'ToDo',
+    title: 'Fingerprinting (Live Scan)',
+    watchFor: null,
+  });
+
+const appointment = (
+  overrides: Partial<PortalAppointment> = {}
+): PortalAppointment => ({
+  address: null,
+  canChange: true,
+  changeCutoff: '2026-10-25T09:15:00',
+  end: '2026-10-26T09:30:00',
+  id: 41,
+  locationName: 'UC Davis Health Police Department, Sacramento',
+  start: '2026-10-26T09:15:00',
+  status: 'Booked',
+  ...overrides,
+});
+
+const options: BookingOptions = {
+  current: null,
+  earliest: '2026-10-23T09:00:00',
+  latest: '2026-11-10',
+  locations: [
+    {
+      address: null,
+      locationId: 2,
+      name: 'UC Davis Health Police Department, Sacramento',
+      slots: [
+        {
+          capacity: 1,
+          end: '2026-10-26T09:30:00',
+          remaining: 1,
+          start: '2026-10-26T09:15:00',
+        },
+      ],
+    },
+  ],
+  typeKey: 'fingerprinting',
+  typeName: 'Fingerprinting (Live Scan)',
+  unavailable: null,
+};
+
+describe('booking from the checklist', () => {
+  it('books a time and shows it', async () => {
+    let booked: unknown = null;
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(view([fingerprinting(booked ? appointment() : null)]))
+      ),
+      http.get('/api/portal/appointments/fingerprinting/options', () =>
+        HttpResponse.json(options)
+      ),
+      http.post('/api/portal/appointments', async ({ request }) => {
+        booked = await request.json();
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      await userEvent.click(
+        await screen.findByRole('button', {
+          name: 'Book Fingerprinting (Live Scan)',
+        })
+      );
+      const dialog = await screen.findByRole('dialog', {
+        name: 'Book Fingerprinting (Live Scan)',
+      });
+      await userEvent.click(
+        await within(dialog).findByRole('button', { name: '9:15 a.m.' })
+      );
+      await userEvent.click(
+        within(dialog).getByRole('button', {
+          name: 'Book Mon, Oct 26, 2026, 9:15 a.m.',
+        })
+      );
+
+      expect(
+        await screen.findByText(
+          "Your Fingerprinting (Live Scan) appointment is booked. We're emailing you the details."
+        )
+      ).toBeInTheDocument();
+      expect(booked).toEqual({
+        locationId: 2,
+        start: '2026-10-26T09:15:00',
+        typeKey: 'fingerprinting',
+      });
+      expect(
+        await screen.findByText('Mon, Oct 26, 2026, 9:15–9:30 a.m.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Change time' })
+      ).toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('cancels after asking', async () => {
+    let cancelled: string | null = null;
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(
+          view([fingerprinting(cancelled ? null : appointment())])
+        )
+      ),
+      http.post('/api/portal/appointments/:id/cancel', ({ params }) => {
+        cancelled = String(params.id);
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      expect(
+        await screen.findByText(
+          'Until Sun, Oct 25, 2026, 9:15 a.m., you can change or cancel it here.'
+        )
+      ).toBeInTheDocument();
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Cancel appointment' })
+      );
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Yes, cancel it' })
+      );
+
+      expect(
+        await screen.findByText(
+          'Your Fingerprinting (Live Scan) appointment is cancelled.'
+        )
+      ).toBeInTheDocument();
+      expect(cancelled).toBe('41');
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('sends the candidate to email once it is too close to change', async () => {
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(
+          view([fingerprinting(appointment({ canChange: false }), false)])
+        )
+      )
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      expect(
+        await screen.findByText(/reply to your confirmation email/)
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /Change|Cancel/ })
+      ).toBeNull();
     } finally {
       cleanup();
     }

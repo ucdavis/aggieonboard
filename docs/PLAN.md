@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-23 — Phases 0–4 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Phase 5 re-scoped to scheduling; 5a (the schedule) done; next: 5b (candidate booking).**
+> **STATUS 2026-10-23 — Phases 0–4 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Phase 5 re-scoped to scheduling; 5a (the schedule) and 5b (candidate booking) done; next: 5c (the other answers).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -108,6 +108,13 @@ New wording the app needed (not in the audit), written by us and open to rewrite
 
 - **Sign-in link email** (`server.core/Seed/Messages/p1-portal-link.md`): "Your UC Davis Health onboarding checklist" / "Use the button below to open your onboarding checklist…".
 - **Button on every email**: "View your onboarding checklist".
+- **Appointment emails** (`server.core/Seed/Messages/p2…p5-appointment-*.md`): "Booked: / Changed: / Cancelled: /
+  Tomorrow: {appointment}", each with When / Where (and Was, for a change), "Until {cutoff}, you can change or cancel this
+  appointment from your onboarding checklist. After that, reply to this email." No "what to bring": the audit doesn't say.
+- **Booking in the portal**: "Book {appointment}", "Change time", "Cancel appointment" / "Cancel this appointment? Yes,
+  cancel it / Keep it", "Until {cutoff}, you can change or cancel it here.", "It's too close to change here. To change it,
+  reply to your confirmation email.", "You can book {appointment} once we ask you to. We'll email you when it's time.",
+  and "Your {appointment} appointment is booked. We're emailing you the details."
 - **Portal labels**: "Your onboarding checklist", "To do / In progress / Coming up / Done", "Nothing to do right now",
   "You're all caught up. We'll email you when there's something to do.", "Watch for an email from … Check your spam or
   junk folder if you don't see it.", "Read our email: …", "Questions? Contact … at …", the Continue page ("For your
@@ -294,7 +301,21 @@ Action needed; marking attended completes it where the table says so. Booking in
   for SSO: I-9 slots are 15 minutes, one candidate at a time. Planned: teams and team access; types, locations, weekly hours, sessions, closures; the slot
   engine; staff booking on a candidate's behalf; the **day roster** per team and location (attended / no-show /
   cancel / reschedule). *Demo: an I-9 desk member sets Wednesday hours and sees tomorrow's roster.*
-- **5b, candidate booking:** pick a location and time in the portal within the window; change or cancel until the
+- **5b, candidate booking:** ✅ 2026-10-24. Built as described. Each step with an appointment shows it in the
+  checklist with **Book**, **Change time** and **Cancel appointment** exactly as the server allows. A candidate books only a
+  step they've been asked to do (action needed) or one already booked (waiting); staff can still book ahead. So New
+  Employee Welcome, which no message starts, is bookable by the candidate once L&D or the specialist starts the step
+  (open question: may candidates choose a session?). A remote-I-9 candidate isn't offered the in-person desk until 5c
+  adds the choice. Every booking, change and cancellation emails the candidate (signed and replied to by their
+  specialist, whoever made the change) after it is saved; a failed email leaves the booking and says so in the history
+  and to staff. Booked/changed carry an `.ics` REQUEST and cancelled a CANCEL, with one event per candidate and
+  appointment type, so a change moves the event already in their calendar. Reminders go from 9 a.m. Pacific the day
+  before, once, skipping anything booked that day; the job runs on one instance (Phase 7: claim rows first if that
+  changes). Verified on the sandbox: Casey moved fingerprinting to Campus PD in the portal, it appeared on Schedule
+  User's roster and left Health PD's, and Mailpit got the change email and invitation; cancel sent a CANCEL with a
+  higher sequence; a reminder went out from the job; another candidate's appointment 404s; a candidate cookie gets 401
+  from staff booking. Not yet checked: how Outlook and Gmail treat the invitation (accept/decline buttons, updates).
+  Planned: pick a location and time in the portal within the window; change or cancel until the
   cutoff; confirmation, change and cancellation emails with an .ics invite; day-before reminders from a background
   job. *Demo: a candidate books fingerprinting and it appears on the police department's roster.*
 - **5c, the other answers:** the I-9 choice (in person → book; remote → representative's name and email, which

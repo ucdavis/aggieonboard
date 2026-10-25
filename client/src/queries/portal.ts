@@ -1,5 +1,10 @@
-import { queryOptions, useMutation } from '@tanstack/react-query';
+import {
+  queryOptions,
+  useMutation,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { fetchJson } from '../lib/api.ts';
+import type { AppointmentStatus, BookingOptions } from './schedule.ts';
 import type { JourneyPhase } from './staff.ts';
 
 // Shapes of /api/portal (server.core/Portal/PortalService.cs). Portal requests never redirect to
@@ -7,7 +12,27 @@ import type { JourneyPhase } from './staff.ts';
 
 export type PortalStepState = 'ToDo' | 'InProgress' | 'Upcoming' | 'Done';
 
+/** An appointment as the candidate sees it. Times are Pacific wall-clock strings. */
+export type PortalAppointment = {
+  address: string | null;
+  canChange: boolean;
+  changeCutoff: string;
+  end: string;
+  id: number;
+  locationName: string;
+  start: string;
+  status: AppointmentStatus;
+};
+
+export type PortalBooking = {
+  appointment: PortalAppointment | null;
+  canBook: boolean;
+  typeKey: string;
+  typeName: string;
+};
+
 export type PortalStep = {
+  booking: PortalBooking | null;
   completedAt: string | null;
   contact: { details: string; name: string } | null;
   dueDate: string | null;
@@ -66,6 +91,22 @@ export const portalMessageQueryOptions = (id: number) =>
     staleTime: Infinity,
   });
 
+export const portalBookingOptionsQueryOptions = (
+  typeKey: string,
+  from: string,
+  to: string
+) =>
+  queryOptions({
+    queryFn: () =>
+      fetchJson<BookingOptions>(
+        `/api/portal/appointments/${typeKey}/options?from=${from}&to=${to}`,
+        portal
+      ),
+    queryKey: ['portal', 'options', typeKey, from, to] as const,
+    retry: false,
+    staleTime: 0,
+  });
+
 const post = (body?: unknown) => ({
   ...portal,
   body: body === undefined ? undefined : JSON.stringify(body),
@@ -88,3 +129,26 @@ export const useSignOut = () =>
   useMutation({
     mutationFn: () => fetchJson<void>('/api/portal/sign-out', post()),
   });
+
+/** Booking moves the step, so the checklist reloads. */
+const usePortalChange = <TVariables>(
+  request: (variables: TVariables) => Promise<void>
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: request,
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: portalKeys.me() }),
+  });
+};
+
+export const useBookAppointment = () =>
+  usePortalChange(
+    (booking: { locationId: number; start: string; typeKey: string }) =>
+      fetchJson<void>('/api/portal/appointments', post(booking))
+  );
+
+export const useCancelAppointment = () =>
+  usePortalChange((id: number) =>
+    fetchJson<void>(`/api/portal/appointments/${id}/cancel`, post())
+  );

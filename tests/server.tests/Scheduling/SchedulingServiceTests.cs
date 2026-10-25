@@ -16,6 +16,7 @@ public class SchedulingServiceTests : IAsyncLifetime
     private static readonly DateOnly Today = new(2026, 10, 22);
 
     private readonly AppDbContext _db = TestDbContextFactory.CreateInMemory();
+    private readonly RecordingEmailService _email = new();
     private SchedulingService _scheduling = null!;
     private StaffMember _sample = null!;
     private StaffMember _scheduler = null!;
@@ -24,7 +25,7 @@ public class SchedulingServiceTests : IAsyncLifetime
     {
         await ReferenceDataSeeder.SeedAsync(_db, Now);
         await DevelopmentSeeder.SeedAsync(_db, Now);
-        _scheduling = new SchedulingService(_db, new FixedClock(Now));
+        _scheduling = new SchedulingService(_db, new FixedClock(Now), TestMessaging.Service(_db, new FixedClock(Now), _email));
         _sample = await _db.Staff.SingleAsync(s => s.Email == DevelopmentSeeder.SandboxStaffEmail);
         _scheduler = await _db.Staff.SingleAsync(s => s.Email == DevelopmentSeeder.SandboxSchedulerEmail);
     }
@@ -99,7 +100,7 @@ public class SchedulingServiceTests : IAsyncLifetime
         var roster = await _scheduling.GetRosterAsync(_scheduler, monday, null);
         roster.Single(r => r.Name.StartsWith("UC Davis Health")).Appointments.Should().ContainSingle(a => a.CandidateName == "Morgan Chen");
 
-        (await _db.AuditEvents.OrderByDescending(e => e.Id).FirstAsync()).Detail
+        (await _db.AuditEvents.OrderByDescending(e => e.Id).FirstAsync(e => e.Action.StartsWith("appointment."))).Detail
             .Should().Be("Fingerprinting (Live Scan) booked for Monday, October 26 at 9:15 a.m. at UC Davis Health Police Department, Sacramento.");
     }
 
@@ -134,7 +135,7 @@ public class SchedulingServiceTests : IAsyncLifetime
 
         (await _db.Appointments.SingleAsync(a => a.Id == original.Id)).Should().BeEquivalentTo(new { Status = AppointmentStatus.Cancelled, CancelReason = "Rescheduled" });
         moved.LocationName.Should().Be("UC Davis Campus Police Department, Davis");
-        (await _db.AuditEvents.OrderByDescending(e => e.Id).FirstAsync()).Action.Should().Be("appointment.changed");
+        (await _db.AuditEvents.OrderByDescending(e => e.Id).FirstAsync(e => e.Action.StartsWith("appointment."))).Action.Should().Be("appointment.changed");
     }
 
     [Fact]

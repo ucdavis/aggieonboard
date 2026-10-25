@@ -12,4 +12,9 @@ public sealed class EmailMessage
 
     /// <summary>Where replies go for this message. Replaces the configured Smtp:ReplyToEmail when set.</summary>
     public string? ReplyTo { get; init; }
+
+    public IReadOnlyList<EmailAttachment> Attachments { get; init; } = [];
 }
+
+/// <summary>A file sent with the message. <paramref name="ContentType"/> may carry parameters ("text/calendar; method=REQUEST").</summary>
+public sealed record EmailAttachment(string FileName, string ContentType, byte[] Content);

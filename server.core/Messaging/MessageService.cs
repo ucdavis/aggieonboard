@@ -33,6 +33,9 @@ public sealed record SentMessageView(
     int Id, string Key, string AuditReference, int TemplateVersion, string Subject, string To, string? ReplyTo,
     DateTimeOffset SentAt, string SentBy, bool Automatic, string Html, string Text);
 
+/// <summary>Whether an automatic email went, and a sentence saying so for whoever made the change.</summary>
+public sealed record SendOutcome(bool Sent, string Notice);
+
 /// <summary>The SMTP server refused or could not be reached. Nothing was recorded as sent.</summary>
 public sealed class MessageDeliveryException(string message, Exception inner) : Exception(message, inner);
 
@@ -85,12 +88,7 @@ public sealed class MessageService(
     /// </summary>
     public async Task<bool> SendOnCandidateRequestAsync(int candidateId, string key, CancellationToken ct = default)
     {
-        var assigned = await db.Candidates
-            .Where(c => c.Id == candidateId)
-            .Select(c => c.OnboardingSpecialist ?? c.RecruitingAssistant ?? c.Recruiter)
-            .SingleOrDefaultAsync(ct);
-        var sender = assigned is { IsActive: true } ? assigned : OnCandidateRequest();
-
+        var sender = await AssignedSenderAsync(candidateId, ct);
         var draft = await DraftAsync(candidateId, key, sender, clock.GetUtcNow(), ct);
         if (draft is null || !draft.CanSend) return false;
         try
@@ -137,6 +135,92 @@ public sealed class MessageService(
         return notice;
     }
 
+    /// <summary>
+    /// Emails the candidate about an appointment: booked, changed (<paramref name="previousStart"/> is the
+    /// old time), cancelled, or tomorrow. Signed and replied to by the candidate's assigned staff, whoever
+    /// made the change. Booking, change and cancellation carry a calendar invitation. Like
+    /// <see cref="SendAutomaticAsync"/> it never throws: the change stands, and the returned notice and
+    /// the history say whether the email went.
+    /// </summary>
+    public async Task<SendOutcome?> SendAppointmentAsync(
+        int appointmentId, string key, DateTime? previousStart, string actorName, CancellationToken ct = default)
+    {
+        var appointment = await db.Appointments
+            .Include(a => a.AppointmentType).Include(a => a.Location).Include(a => a.Candidate)
+            .SingleOrDefaultAsync(a => a.Id == appointmentId, ct);
+        if (appointment is null || !SystemMessages.Appointment.Contains(key)) return null;
+
+        var type = appointment.AppointmentType!;
+        var location = appointment.Location!;
+        var facts = new AppointmentFacts(
+            type.Name, appointment.Start, appointment.End, location.Name, location.Address,
+            appointment.Start.AddHours(-type.ChangeCutoffHours), previousStart);
+        var sender = await AssignedSenderAsync(appointment.CandidateId, ct);
+        var draft = await DraftAsync(appointment.CandidateId, key, sender, clock.GetUtcNow(), ct, facts);
+        if (draft is null) return null;
+
+        string notice;
+        if (!draft.CanSend)
+        {
+            notice = $"The “{draft.Rendered.Subject}” email was not sent. {WhyNot(draft)}";
+        }
+        else
+        {
+            try
+            {
+                var invite = key == SystemMessages.AppointmentReminder ? null : Invite(appointment, draft, cancel: key == SystemMessages.AppointmentCancelled);
+                await DeliverAndRecordAsync(draft, sender, automatic: true, ct, actorName, invite is null ? [] : [invite]);
+                return new SendOutcome(true, $"“{draft.Rendered.Subject}” was emailed to {draft.Candidate.Email}.");
+            }
+            catch (MessageDeliveryException ex)
+            {
+                notice = $"The “{draft.Rendered.Subject}” email was not sent: {ex.Message}";
+            }
+        }
+
+        Audit(draft.Candidate.Id, sender, "message.not-sent", notice, actorName);
+        await db.SaveChangesAsync(ct);
+        return new SendOutcome(false, notice);
+    }
+
+    /// <summary>
+    /// One event per candidate and appointment type, so a change moves the event already in their
+    /// calendar and a cancellation removes it. Appointment IDs only grow, so each new booking, and
+    /// each cancellation after it, carries a higher sequence than anything sent before.
+    /// </summary>
+    private EmailAttachment Invite(Appointment appointment, Draft draft, bool cancel)
+    {
+        var type = appointment.AppointmentType!;
+        var location = appointment.Location!;
+        var portalUrl = portal.Value.PortalUrl;
+        var description = cancel
+            ? "This appointment is cancelled." + (portalUrl is null ? "" : $" Book a new time from your onboarding checklist: {portalUrl}")
+            : portalUrl is null ? type.Name : $"Change or cancel from your onboarding checklist: {portalUrl}";
+        var ics = CalendarInvite.Create(new CalendarEvent(
+            Uid: $"{appointment.CandidateId}-{type.Key}@aggieonboard",
+            Sequence: appointment.Id * 2 + (cancel ? 1 : 0),
+            Start: appointment.Start,
+            End: appointment.End,
+            Summary: $"UC Davis Health: {type.Name}",
+            Location: location.Address is { } address ? $"{location.Name}, {address}" : location.Name,
+            Description: description,
+            OrganizerName: string.IsNullOrWhiteSpace(smtp.Value.FromName) ? "UC Davis Health" : smtp.Value.FromName,
+            OrganizerEmail: smtp.Value.FromEmail,
+            AttendeeName: $"{draft.Candidate.FirstName} {draft.Candidate.LastName}",
+            AttendeeEmail: draft.Candidate.Email), draft.Now, cancel);
+        return new EmailAttachment(CalendarInvite.FileName, CalendarInvite.ContentType(cancel), System.Text.Encoding.UTF8.GetBytes(ics));
+    }
+
+    /// <summary>Who signs a message nobody on staff pressed Send for: the candidate's specialist or assistant, when assigned.</summary>
+    private async Task<StaffMember> AssignedSenderAsync(int candidateId, CancellationToken ct)
+    {
+        var assigned = await db.Candidates
+            .Where(c => c.Id == candidateId)
+            .Select(c => c.OnboardingSpecialist ?? c.RecruitingAssistant ?? c.Recruiter)
+            .SingleOrDefaultAsync(ct);
+        return assigned is { IsActive: true } ? assigned : OnCandidateRequest();
+    }
+
     public async Task<IReadOnlyList<SentMessageSummary>> GetSentAsync(int candidateId, CancellationToken ct = default) =>
         await db.SentMessages
             .Where(m => m.CandidateId == candidateId)
@@ -165,7 +249,8 @@ public sealed class MessageService(
         public bool CanSend => Blockers.Count == 0 && Rendered.Missing.Count == 0;
     }
 
-    private async Task<Draft?> DraftAsync(int candidateId, string key, StaffMember sender, DateTimeOffset now, CancellationToken ct)
+    private async Task<Draft?> DraftAsync(
+        int candidateId, string key, StaffMember sender, DateTimeOffset now, CancellationToken ct, AppointmentFacts? appointment = null)
     {
         var candidate = await JourneyData.CandidatesWithJourney(db).SingleOrDefaultAsync(c => c.Id == candidateId, ct);
         var template = await db.MessageTemplates
@@ -195,7 +280,7 @@ public sealed class MessageService(
                 : (Due?)null);
 
         var fields = MergeFieldResolver.Resolve(
-            new MergeContext(candidate, sender, settings, deadlines, dueByStep, now, portal.Value.LinkLifetimeDays));
+            new MergeContext(candidate, sender, settings, deadlines, dueByStep, now, portal.Value.LinkLifetimeDays, appointment));
         var rendered = MessageRenderer.Render(template, candidate, fields);
 
         var blockers = new List<string>();
@@ -207,6 +292,10 @@ public sealed class MessageService(
         else if (steps.Count > 0 && applicable.Count == 0)
         {
             blockers.Add($"This message is for {string.Join(", ", steps.Select(s => s.Step!.Title))}, which {(steps.Count == 1 ? "doesn't" : "don't")} apply to {candidate.FirstName}.");
+        }
+        if (SystemMessages.Appointment.Contains(key) && appointment is null)
+        {
+            blockers.Add("Appointment emails are sent by the schedule when an appointment is booked, changed or cancelled, and the day before it.");
         }
         if (key == SystemMessages.PortalLink && portal.Value.PortalUrl is null)
         {
@@ -225,7 +314,8 @@ public sealed class MessageService(
     }
 
     private async Task DeliverAndRecordAsync(
-        Draft draft, StaffMember sender, bool automatic, CancellationToken ct, string? actorName = null)
+        Draft draft, StaffMember sender, bool automatic, CancellationToken ct, string? actorName = null,
+        IReadOnlyList<EmailAttachment>? attachments = null)
     {
         var pending = portal.Value.PortalUrl is null ? null : PortalTokens.Create();
         var signInUrl = pending is null ? null : portal.Value.SignInUrl(pending.Token);
@@ -242,6 +332,7 @@ public sealed class MessageService(
                 Subject = draft.Rendered.Subject,
                 HtmlBody = html,
                 TextBody = WithButton(draft.Rendered.Text, signInUrl),
+                Attachments = attachments ?? [],
             }, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

@@ -75,6 +75,13 @@ reach parity with.
   in a serializable transaction; keep any new capacity check inside it. A team member
   (`StaffRole.TeamMember`) gets `Scheduling` but never `Staff`: no pipeline, no candidate records.
   Team-scoped endpoints answer 404, not 403, for another team's location or appointment.
+- Appointment emails: every booking, change and cancellation, whoever makes it, goes through
+  `MessageService.SendAppointmentAsync` after the change is saved (never inside the booking
+  transaction; a failed email never undoes a booking). Booked/changed carry a REQUEST `invite.ics`,
+  cancelled a CANCEL, with one UID per candidate and type (`CalendarInvite`). The day-before reminder is
+  `AppointmentReminders`, run by `server/Services/AppointmentReminderJob.cs` on one instance.
+  Candidates book in the portal (`/api/portal/appointments`) only for a step that is action needed or
+  waiting; `SchedulingService.GetPortalBookingsAsync` says what each step offers, and the portal shows exactly that.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what

@@ -50,8 +50,9 @@ public class MessageServiceTests : IAsyncLifetime
         }
         await _db.SaveChangesAsync();
 
+        // Appointment emails are filled from an appointment; their own tests cover them.
         var keys = await _db.MessageTemplates.Where(t => t.Sender == MessageSender.App).Select(t => t.Key).ToListAsync();
-        foreach (var key in keys)
+        foreach (var key in keys.Where(k => !SystemMessages.Appointment.Contains(k)))
         {
             var preview = (await Messages().PreviewAsync(casey.Id, key, _me))!;
             preview.Missing.Should().BeEmpty($"'{key}' should be fillable for Casey");

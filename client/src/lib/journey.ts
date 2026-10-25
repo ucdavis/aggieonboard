@@ -120,9 +120,13 @@ export const errorMessage = (error: unknown) => {
   return 'Something went wrong. Try again.';
 };
 
-/** "Message 4" for the audit's messages; the app's own messages (audit "portal") have no number. */
+/** "Message 4" for the audit's messages; the app's own (audit "portal", "appointment") have no number. */
 export const messageLabel = (auditReference: string) =>
-  auditReference === 'portal' ? 'Sign-in link' : `Message ${auditReference}`;
+  auditReference === 'portal'
+    ? 'Sign-in link'
+    : auditReference === 'appointment'
+      ? 'Appointment email'
+      : `Message ${auditReference}`;
 
 /** "2026-10-27T09:15:00" → { date: "2026-10-27", time: "09:15:00" }, with no time-zone conversion. */
 const splitLocal = (value: string) => {

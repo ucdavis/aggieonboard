@@ -1,26 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import {
-  addDays,
   appointmentStatusBadge,
   appointmentStatusLabel,
   errorMessage,
   formatAppointment,
-  formatClock,
-  formatDate,
-  formatDay,
-  pacificToday,
 } from '@/lib/journey.ts';
 import {
   type AppointmentSummary,
   bookingOptionsQueryOptions,
   candidateAppointmentsQueryOptions,
   type CandidateAppointmentType,
-  type Slot,
   useBookForCandidate,
   useCancelForCandidate,
 } from '@/queries/schedule.ts';
-import { Dialog } from './Dialog.tsx';
+import { BookingDialog } from '../scheduling/BookingDialog.tsx';
 
 /** The candidate's appointments, booked or changed here on their behalf. */
 export function Appointments({ candidateId }: { candidateId: number }) {
@@ -56,12 +50,10 @@ export function Appointments({ candidateId }: { candidateId: number }) {
         ))}
       </ul>
       {booking && (
-        <BookingDialog
+        <StaffBooking
           candidateId={candidateId}
-          current={booking.current}
           onClose={() => setBooking(null)}
-          typeKey={booking.typeKey}
-          typeName={booking.typeName}
+          type={booking}
         />
       )}
     </section>
@@ -196,176 +188,32 @@ function AppointmentLine({
   );
 }
 
-const span = 13;
-
-/** Open times in the candidate's window, two weeks at a time, grouped by day. */
-function BookingDialog({
+/** Booking on the candidate's behalf. Shows the email notice, if any, on the candidate page. */
+function StaffBooking({
   candidateId,
-  current,
   onClose,
-  typeKey,
-  typeName,
+  type,
 }: {
   candidateId: number;
-  current: AppointmentSummary | null;
   onClose: () => void;
-  typeKey: string;
-  typeName: string;
+  type: CandidateAppointmentType;
 }) {
-  const [from, setFrom] = useState(pacificToday());
-  const to = addDays(from, span);
-  const options = useQuery(
-    bookingOptionsQueryOptions(candidateId, typeKey, from, to)
-  );
   const book = useBookForCandidate(candidateId);
-  const [locationId, setLocationId] = useState<number | null>(null);
-  const [chosen, setChosen] = useState<Slot | null>(null);
-  const locationSelectId = useId();
-
-  const data = options.data;
-  const location =
-    data?.locations.find((l) => l.locationId === locationId) ??
-    data?.locations[0];
-  const byDay = new Map<string, Slot[]>();
-  for (const slot of location?.slots ?? []) {
-    const day = slot.start.slice(0, 10);
-    byDay.set(day, [...(byDay.get(day) ?? []), slot]);
-  }
-
   return (
-    <Dialog
+    <BookingDialog
+      booking={book}
+      current={type.current}
+      onBook={(choice) =>
+        book.mutate(
+          { ...choice, typeKey: type.typeKey },
+          { onSuccess: onClose }
+        )
+      }
       onClose={onClose}
-      title={`${current ? 'Change' : 'Book'} ${typeName}`}
-    >
-      {options.error ? (
-        <div className="alert alert-error" role="alert">
-          {errorMessage(options.error)}
-        </div>
-      ) : !data ? (
-        <div className="flex justify-center py-12">
-          <span className="loading loading-spinner loading-lg" />
-        </div>
-      ) : data.unavailable ? (
-        <div className="alert alert-warning" role="status">
-          {data.unavailable}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {current && (
-            <p className="text-sm">
-              Currently {formatAppointment(current.start, current.end)} at{' '}
-              {current.locationName}. Booking a new time replaces it.
-            </p>
-          )}
-          {data.latest && (
-            <p className="text-sm text-base-content/70">
-              Must be on or before {formatDate(data.latest)}.
-            </p>
-          )}
-          {data.locations.length > 1 && (
-            <div className="form-control max-w-md">
-              <label className="label py-1 text-sm" htmlFor={locationSelectId}>
-                Location
-              </label>
-              <select
-                className="select select-bordered select-sm"
-                id={locationSelectId}
-                onChange={(e) => {
-                  setLocationId(Number(e.target.value));
-                  setChosen(null);
-                }}
-                value={location?.locationId}
-              >
-                {data.locations.map((l) => (
-                  <option key={l.locationId} value={l.locationId}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={from <= pacificToday()}
-              onClick={() => setFrom(addDays(from, -(span + 1)))}
-              type="button"
-            >
-              ← Earlier
-            </button>
-            <span className="text-sm font-medium">
-              {formatDate(from)} – {formatDate(to)}
-            </span>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={() => setFrom(addDays(from, span + 1))}
-              type="button"
-            >
-              Later →
-            </button>
-          </div>
-          {byDay.size === 0 ? (
-            <p className="rounded-box bg-base-200 p-4 text-sm">
-              No open times in these two weeks
-              {location ? ` at ${location.name}` : ''}.
-            </p>
-          ) : (
-            <div className="max-h-80 space-y-3 overflow-y-auto">
-              {[...byDay].map(([day, slots]) => (
-                <fieldset key={day}>
-                  <legend className="mb-1 text-sm font-semibold">
-                    {formatDate(day)}
-                  </legend>
-                  <div className="flex flex-wrap gap-2">
-                    {slots.map((slot) => (
-                      <button
-                        aria-pressed={chosen?.start === slot.start}
-                        className={`btn btn-sm ${chosen?.start === slot.start ? 'btn-primary' : 'btn-outline'}`}
-                        key={slot.start}
-                        onClick={() => setChosen(slot)}
-                        type="button"
-                      >
-                        {formatClock(slot.start)}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
-              ))}
-            </div>
-          )}
-          {book.error && (
-            <div className="alert alert-error text-sm" role="alert">
-              {errorMessage(book.error)}
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
-            <button className="btn btn-ghost" onClick={onClose} type="button">
-              Close
-            </button>
-            <button
-              className="btn btn-primary"
-              disabled={!chosen || !location || book.isPending}
-              onClick={() =>
-                chosen &&
-                location &&
-                book.mutate(
-                  {
-                    locationId: location.locationId,
-                    start: chosen.start,
-                    typeKey,
-                  },
-                  { onSuccess: onClose }
-                )
-              }
-              type="button"
-            >
-              {chosen
-                ? `Book ${formatDay(chosen.start)}, ${formatClock(chosen.start)}`
-                : 'Choose a time'}
-            </button>
-          </div>
-        </div>
-      )}
-    </Dialog>
+      optionsFor={(from, to) =>
+        bookingOptionsQueryOptions(candidateId, type.typeKey, from, to)
+      }
+      title={`${type.current ? 'Change' : 'Book'} ${type.typeName}`}
+    />
   );
 }

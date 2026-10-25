@@ -11,6 +11,7 @@ using Server.Core.Data;
 using Server.Core.Domain;
 using Server.Core.Journey;
 using Server.Core.Portal;
+using Server.Core.Scheduling;
 using Server.Core.Seed;
 using Server.Helpers;
 using Server.Tests.Messaging;
@@ -36,7 +37,8 @@ public class PortalTests : IAsyncLifetime
     private PortalTokens Tokens() => new(_db, _clock, TestMessaging.Portal());
 
     private PortalService Portal() =>
-        new(_db, _clock, Tokens(), TestMessaging.Service(_db, _clock, _email));
+        new(_db, _clock, Tokens(), TestMessaging.Service(_db, _clock, _email),
+            new SchedulingService(_db, _clock, TestMessaging.Service(_db, _clock, _email)));
 
     private async Task<int> IdOf(string firstName) => (await _db.Candidates.SingleAsync(c => c.FirstName == firstName)).Id;
 

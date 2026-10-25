@@ -7,6 +7,7 @@ namespace Server.Core.Scheduling;
 public sealed record LocationSummary(
     int Id, string Name, string? Address, string AppointmentTypeKey, string AppointmentTypeName, string TeamName);
 
+/// <remarks><see cref="Notice"/> says whether the candidate was emailed about the change just made.</remarks>
 public sealed record AppointmentSummary(
     int Id,
     string TypeKey,
@@ -20,7 +21,8 @@ public sealed record AppointmentSummary(
     string BookedBy,
     DateTimeOffset BookedAt,
     string? CancelReason,
-    DateTime ChangeCutoff);
+    DateTime ChangeCutoff,
+    string? Notice = null);
 
 public sealed record LocationSlots(int LocationId, string Name, string? Address, IReadOnlyList<Slot> Slots);
 
@@ -37,6 +39,16 @@ public sealed record BookingOptions(
 /// <summary>An appointment type as it applies to one candidate, for the candidate page and the portal.</summary>
 public sealed record CandidateAppointmentType(
     string TypeKey, string TypeName, string StepKey, AppointmentSummary? Current, IReadOnlyList<AppointmentSummary> Past);
+
+/// <summary>An appointment as the candidate sees it: no staff names, no cancellation reasons.</summary>
+public sealed record PortalAppointment(
+    int Id, DateTime Start, DateTime End, string LocationName, string? Address, AppointmentStatus Status, DateTime ChangeCutoff, bool CanChange);
+
+/// <summary>
+/// A step's appointment in the portal. <see cref="Appointment"/> is the one booked, or else the one
+/// attended. <see cref="CanBook"/> says whether the candidate may book (or change) it online now.
+/// </summary>
+public sealed record PortalBooking(string TypeKey, string TypeName, bool CanBook, PortalAppointment? Appointment);
 
 public sealed record RosterEntry(
     int AppointmentId,

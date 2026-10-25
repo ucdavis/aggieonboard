@@ -142,7 +142,7 @@ public class Appointment
     public string? StatusChangedBy { get; set; }
     public string? CancelReason { get; set; }
 
-    /// <summary>When the day-before reminder went out (5b). Null until then.</summary>
+    /// <summary>When the day-before reminder was sent, or tried (the history says which). Null until then.</summary>
     public DateTimeOffset? ReminderSentAt { get; set; }
 
     public bool IsActive => Status == AppointmentStatus.Booked;

@@ -2,13 +2,16 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Server.Controllers.Staff;
 using Server.Core.Portal;
+using Server.Core.Scheduling;
 using Server.Helpers;
 
 namespace Server.Controllers.Portal;
 
 public sealed record SignInRequest(string? Token);
 public sealed record LinkRequest(string? Email);
+public sealed record PortalBookingRequest(string TypeKey, int LocationId, DateTime Start);
 
 /// <summary>
 /// The candidate portal's API. Only the candidate cookie authenticates here (<see cref="CandidateAuthentication.Policy"/>),
@@ -18,7 +21,8 @@ public sealed record LinkRequest(string? Email);
 [Route("api/portal")]
 [Authorize(Policy = CandidateAuthentication.Policy)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class PortalController(PortalService portal, PortalTokens tokens) : ControllerBase
+[JourneyErrors]
+public class PortalController(PortalService portal, PortalTokens tokens, SchedulingService scheduling) : ControllerBase
 {
     /// <summary>The smallest time a link request takes, so its timing says nothing about whether the address is on file.</summary>
     private static readonly TimeSpan LinkRequestFloor = TimeSpan.FromSeconds(1);
@@ -85,6 +89,29 @@ public class PortalController(PortalService portal, PortalTokens tokens) : Contr
     [HttpGet("messages/{sentId:int}")]
     public async Task<ActionResult<PortalMessage>> Message(int sentId, CancellationToken ct) =>
         await portal.GetMessageAsync(CurrentCandidate, sentId, ct) is { } message ? message : NotFound();
+
+    /// <summary>Open times for one of the candidate's appointments. Refused for a step they haven't been asked to do yet.</summary>
+    [HttpGet("appointments/{typeKey}/options")]
+    public async Task<ActionResult<BookingOptions>> AppointmentOptions(
+        string typeKey, [FromQuery] DateOnly from, [FromQuery] DateOnly to, CancellationToken ct) =>
+        await scheduling.GetOptionsAsync(CurrentCandidate, typeKey, from, to, ct, forCandidate: true) is { } options
+            ? options
+            : NotFound();
+
+    /// <summary>Books, or moves the current booking of that type. The confirmation goes by email; the checklist reloads.</summary>
+    [HttpPost("appointments")]
+    public async Task<IActionResult> Book(PortalBookingRequest request, CancellationToken ct)
+    {
+        await scheduling.BookAsync(CurrentCandidate, request.TypeKey, request.LocationId, request.Start, SchedulingActor.Candidate, ct);
+        return NoContent();
+    }
+
+    /// <summary>Cancels the candidate's own booking, until the change cutoff. Anyone else's is a 404.</summary>
+    [HttpPost("appointments/{appointmentId:int}/cancel")]
+    public async Task<IActionResult> CancelAppointment(int appointmentId, CancellationToken ct) =>
+        await scheduling.CancelAsync(appointmentId, SchedulingActor.Candidate, null, asCandidateId: CurrentCandidate, ct) is null
+            ? NotFound()
+            : NoContent();
 
     /// <summary>The policy guarantees the claim; this reads nothing else.</summary>
     private int CurrentCandidate => CandidateAuthentication.CandidateId(User)!.Value;

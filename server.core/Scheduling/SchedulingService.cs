@@ -3,15 +3,17 @@ using Microsoft.EntityFrameworkCore;
 using Server.Core.Data;
 using Server.Core.Domain;
 using Server.Core.Journey;
+using Server.Core.Messaging;
 
 namespace Server.Core.Scheduling;
 
 /// <summary>
 /// Booking, rosters and availability. Booking checks the slot inside a serializable transaction, so
 /// two people cannot take the last seat; every change writes the candidate's history and moves the
-/// journey step it fulfils.
+/// journey step it fulfils. The candidate is emailed about every booking, change and cancellation,
+/// after the change is saved: an email that fails never undoes a booking.
 /// </summary>
-public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
+public sealed class SchedulingService(AppDbContext db, TimeProvider clock, MessageService messages)
 {
     /// <summary>The widest range of days one slot request may cover.</summary>
     public const int MaxRangeDays = 62;
@@ -40,8 +42,44 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
             .ToList();
     }
 
-    /// <summary>What the candidate can book for this type between two dates, at every active location.</summary>
-    public async Task<BookingOptions?> GetOptionsAsync(int candidateId, string typeKey, DateOnly from, DateOnly to, CancellationToken ct = default)
+    /// <summary>The portal's appointment for each step that has one, keyed by step.</summary>
+    public async Task<IReadOnlyDictionary<string, PortalBooking>> GetPortalBookingsAsync(int candidateId, CancellationToken ct = default)
+    {
+        var candidate = await JourneyData.CandidatesWithJourney(db).SingleOrDefaultAsync(c => c.Id == candidateId, ct);
+        if (candidate is null) return new Dictionary<string, PortalBooking>();
+
+        var types = await db.AppointmentTypes.OrderBy(t => t.Id).ToListAsync(ct);
+        var appointments = await Appointments()
+            .Where(a => a.CandidateId == candidateId && (a.Status == AppointmentStatus.Booked || a.Status == AppointmentStatus.Attended))
+            .OrderByDescending(a => a.Start)
+            .ToListAsync(ct);
+        var now = BusinessCalendar.ToPacific(clock.GetUtcNow());
+
+        var bookings = new Dictionary<string, PortalBooking>();
+        foreach (var type in types.Where(t => Applies(candidate, t)))
+        {
+            var step = StepFor(candidate, type);
+            var shown = appointments.FirstOrDefault(a => a.AppointmentTypeId == type.Id && a.Status == AppointmentStatus.Booked)
+                ?? appointments.FirstOrDefault(a => a.AppointmentTypeId == type.Id);
+
+            // Nothing booked and nothing to book yet (coming up, or done some other way, like a remote I-9).
+            if (shown is null && !OpenToCandidate(candidate, type, step)) continue;
+            var cutoff = shown?.Start.AddHours(-type.ChangeCutoffHours);
+            var canChange = shown is { Status: AppointmentStatus.Booked } && now < cutoff;
+            var canBook = OpenToCandidate(candidate, type, step) && (shown is null || canChange);
+
+            bookings[type.StepKey] = new PortalBooking(type.Key, type.Name, canBook, shown is null ? null : new PortalAppointment(
+                shown.Id, shown.Start, shown.End, shown.Location!.Name, shown.Location.Address, shown.Status, cutoff!.Value, canChange));
+        }
+        return bookings;
+    }
+
+    /// <summary>
+    /// What the candidate can book for this type between two dates, at every active location.
+    /// <paramref name="forCandidate"/> applies the portal's rule: only a step they've been asked to do.
+    /// </summary>
+    public async Task<BookingOptions?> GetOptionsAsync(
+        int candidateId, string typeKey, DateOnly from, DateOnly to, CancellationToken ct = default, bool forCandidate = false)
     {
         var candidate = await JourneyData.CandidatesWithJourney(db).SingleOrDefaultAsync(c => c.Id == candidateId, ct);
         var type = await db.AppointmentTypes.Include(t => t.Locations).SingleOrDefaultAsync(t => t.Key == typeKey, ct);
@@ -52,7 +90,9 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
 
         var window = await WindowAsync(candidate, type, ct);
         var current = await Appointments().FirstOrDefaultAsync(a => a.CandidateId == candidateId && a.AppointmentTypeId == type.Id && a.Status == AppointmentStatus.Booked, ct);
-        var unavailable = Applies(candidate, type) ? window.Unavailable : $"{type.Name} doesn't apply to {candidate.FirstName}.";
+        var unavailable = !Applies(candidate, type) ? $"{type.Name} doesn't apply to {candidate.FirstName}."
+            : forCandidate && !OpenToCandidate(candidate, type, StepFor(candidate, type)) ? NotYetOpen(type)
+            : window.Unavailable;
 
         var locations = new List<LocationSlots>();
         if (unavailable is null)
@@ -140,15 +180,20 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
     public async Task<AppointmentSummary> BookAsync(
         int candidateId, string typeKey, int locationId, DateTime start, SchedulingActor actor, CancellationToken ct = default)
     {
+        (Appointment Booked, DateTime? PreviousStart) result;
         try
         {
-            return await BookInTransactionAsync(candidateId, typeKey, locationId, start, actor, ct);
+            result = await BookInTransactionAsync(candidateId, typeKey, locationId, start, actor, ct);
         }
         catch (Exception ex) when (LostARace(ex))
         {
             // Two people took the last seat at once; SQL Server let one through and stopped the other.
             throw new JourneyRuleException("That time was just taken. Choose another.");
         }
+
+        var key = result.PreviousStart is null ? SystemMessages.AppointmentBooked : SystemMessages.AppointmentChanged;
+        var notice = await messages.SendAppointmentAsync(result.Booked.Id, key, result.PreviousStart, actor.Name, ct);
+        return Summary(result.Booked) with { Notice = notice?.Notice };
     }
 
     /// <summary>A serializable booking that SQL Server chose as a deadlock victim (1205): someone else won the seat.</summary>
@@ -161,7 +206,7 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
         return false;
     }
 
-    private async Task<AppointmentSummary> BookInTransactionAsync(
+    private async Task<(Appointment Booked, DateTime? PreviousStart)> BookInTransactionAsync(
         int candidateId, string typeKey, int locationId, DateTime start, SchedulingActor actor, CancellationToken ct)
     {
         await using var transaction = db.Database.IsRelational()
@@ -175,6 +220,7 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
         var location = type.Locations.SingleOrDefault(l => l.Id == locationId && l.IsActive)
             ?? throw new JourneyRuleException($"That location doesn't offer {type.Name}.");
         if (!Applies(candidate, type)) throw new JourneyRuleException($"{type.Name} doesn't apply to {candidate.FirstName}.");
+        if (actor.IsCandidate && !OpenToCandidate(candidate, type, StepFor(candidate, type))) throw new JourneyRuleException(NotYetOpen(type));
 
         var window = await WindowAsync(candidate, type, ct);
         if (window.Unavailable is { } why) throw new JourneyRuleException(why);
@@ -228,7 +274,7 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
 
         await db.SaveChangesAsync(ct);
         if (transaction is not null) await transaction.CommitAsync(ct);
-        return Summary(appointment);
+        return (appointment, previous?.Start);
     }
 
     /// <summary>Cancels a booking. A candidate may cancel only their own, and only before the cutoff.</summary>
@@ -256,7 +302,9 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
             $"{appointment.AppointmentType!.Name} on {Describe(appointment.Start)} at {appointment.Location!.Name} cancelled"
             + (appointment.CancelReason is { } r ? $": {r}" : "."));
         await db.SaveChangesAsync(ct);
-        return Summary(appointment);
+
+        var notice = await messages.SendAppointmentAsync(appointment.Id, SystemMessages.AppointmentCancelled, null, actor.Name, ct);
+        return Summary(appointment) with { Notice = notice?.Notice };
     }
 
     /// <summary>
@@ -432,6 +480,18 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock)
                 $"Appointments can be changed online until {type.ChangeCutoffHours} hours before. Contact your onboarding specialist to change this one.");
         }
     }
+
+    /// <summary>
+    /// A candidate books only a step they've been asked to do (action needed), or changes one already
+    /// booked (waiting). Staff may book ahead; booking starts the step. Step 8: a candidate who chose a
+    /// remote I-9 isn't offered the in-person desk here; choosing between them arrives in 5c.
+    /// </summary>
+    private static bool OpenToCandidate(Candidate candidate, AppointmentType type, CandidateStep step) =>
+        step.Status is StepStatus.ActionNeeded or StepStatus.Waiting
+        && !(type.StepKey == "i9" && candidate.I9Method == I9Method.Remote);
+
+    private static string NotYetOpen(AppointmentType type) =>
+        $"You can book {type.Name} once we ask you to. We'll email you when it's time.";
 
     private static bool Applies(Candidate candidate, AppointmentType type) =>
         candidate.Steps.FirstOrDefault(s => s.Step!.Key == type.StepKey) is { Status: not StepStatus.Skipped };

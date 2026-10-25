@@ -22,9 +22,10 @@ Try these flows:
 5. On Jordan Lee's Qualification verification, choose **Candidate done**: message 5 goes out automatically. Sent messages are listed under **Messages sent** and open exactly as they went out.
 6. In the local inbox, open any email and choose **View your onboarding checklist**, then **Continue**: that is the candidate portal, signed in as that candidate. The same link won't work twice. To get in again, use **Email a sign-in link** on the candidate's page, or **Email me a new link** at `/portal`.
 7. Open **Schedule** for today's and tomorrow's rosters by location (Morgan Chen at Employee Health today, Casey Brooks at Health PD on the next business day), mark attendance, or open **Hours and sessions** to change a location's hours. On a candidate's page, **Appointments** books or changes on their behalf.
-8. Visit `/login` and switch to Schedule User, a police-department team member: only the schedule, only the two police locations, and no links into candidate records.
-9. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
-10. Visit `/login` and sign out. `/api/user/me` returns `401`.
+8. As Casey Brooks in the portal (step 6), **Change time** on Fingerprinting and pick a Campus PD slot. The local inbox gets "Changed: Fingerprinting (Live Scan)" with an `invite.ics`, and the booking moves to Campus PD on Schedule User's roster. **Cancel appointment** sends a cancellation that removes the calendar event. Within 24 hours of an appointment the portal stops offering changes. Day-before reminders go out from 9 a.m. Pacific (`Scheduling` in `appsettings.json`).
+9. Visit `/login` and switch to Schedule User, a police-department team member: only the schedule, only the two police locations, and no links into candidate records.
+10. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
+11. Visit `/login` and sign out. `/api/user/me` returns `401`.
 
 Fixtures are seeded only into an empty database. After a schema or fixture change, reset with `down --volumes` (below).
 

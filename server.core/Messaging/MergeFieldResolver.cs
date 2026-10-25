@@ -18,7 +18,12 @@ public sealed record MergeContext(
     DeadlineCalculator Deadlines,
     IReadOnlyDictionary<string, Due?> DueByStep,
     DateTimeOffset Now,
-    int PortalLinkLifetimeDays = 14);
+    int PortalLinkLifetimeDays = 14,
+    AppointmentFacts? Appointment = null);
+
+/// <summary>The appointment an appointment email is about. Times are Pacific wall-clock.</summary>
+public sealed record AppointmentFacts(
+    string Name, DateTime Start, DateTime End, string LocationName, string? Address, DateTime ChangeCutoff, DateTime? PreviousStart);
 
 /// <summary>Fills every field in <see cref="MergeFields.All"/>. A test holds the two lists together.</summary>
 public static class MergeFieldResolver
@@ -54,6 +59,8 @@ public static class MergeFieldResolver
         var clearance = context.Deadlines.ClearanceDeadline(c.AnticipatedStartDate);
         var licenses = c.Qualifications.Where(q => q.Kind != QualificationKind.Degree).ToList();
         var degrees = c.Qualifications.Where(q => q.Kind == QualificationKind.Degree).ToList();
+        var a = context.Appointment;
+        const string onlyAppointments = "Only appointment emails have an appointment; they are sent when one is booked, changed or cancelled.";
 
         return new Dictionary<string, ResolvedField>
         {
@@ -88,8 +95,28 @@ public static class MergeFieldResolver
             ["FingerprintSchedulingUrl"] = Setting(SettingKeys.FingerprintSchedulingUrl, url: true),
 
             ["PortalLinkLifetime"] = new(context.PortalLinkLifetimeDays == 1 ? "1 day" : $"{context.PortalLinkLifetimeDays} days", ""),
+
+            ["AppointmentName"] = Text(a?.Name, onlyAppointments),
+            ["AppointmentTime"] = new(a is null ? null : FormatAppointment(a.Start, a.End), onlyAppointments),
+            ["AppointmentPlace"] = Text(a is null ? null : a.Address is { } address ? $"{a.LocationName}, {address}" : a.LocationName, onlyAppointments),
+            ["AppointmentChangeDeadline"] = new(a is null ? null : FormatDue(ToDue(a.ChangeCutoff)), onlyAppointments),
+            ["PreviousAppointmentTime"] = new(a?.PreviousStart is { } previous ? FormatDue(ToDue(previous)) : null,
+                "Only the email for a changed appointment has an earlier time."),
         };
     }
+
+    /// <summary>"Wednesday, October 28, 2026, 9:15–9:30 a.m.", or "11:45 a.m.–12:15 p.m." across noon.</summary>
+    public static string FormatAppointment(DateTime start, DateTime end)
+    {
+        string Clock(DateTime t) => t.ToString("h:mm", English);
+        string Half(DateTime t) => t.Hour < 12 ? "a.m." : "p.m.";
+        var day = FormatDate(DateOnly.FromDateTime(start));
+        return Half(start) == Half(end) && start.Date == end.Date
+            ? $"{day}, {Clock(start)}–{Clock(end)} {Half(end)}"
+            : $"{day}, {Clock(start)} {Half(start)}–{Clock(end)} {Half(end)}";
+    }
+
+    private static Due ToDue(DateTime at) => new(DateOnly.FromDateTime(at), TimeOnly.FromDateTime(at));
 
     /// <summary>"Thursday, November 19, 2026": candidates read these, so nothing is abbreviated.</summary>
     public static string FormatDate(DateOnly date) => date.ToString("dddd, MMMM d, yyyy", English);

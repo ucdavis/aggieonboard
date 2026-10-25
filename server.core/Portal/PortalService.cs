@@ -3,6 +3,7 @@ using Server.Core.Data;
 using Server.Core.Domain;
 using Server.Core.Journey;
 using Server.Core.Messaging;
+using Server.Core.Scheduling;
 
 namespace Server.Core.Portal;
 
@@ -36,7 +37,8 @@ public sealed record PortalStep(
     PortalWatchFor? WatchFor,
     PortalContact? Contact,
     IReadOnlyList<PortalMessageLink> Messages,
-    DateTimeOffset? CompletedAt);
+    DateTimeOffset? CompletedAt,
+    PortalBooking? Booking);
 
 public sealed record PortalView(
     string FirstName,
@@ -53,7 +55,7 @@ public sealed record PortalMessage(int Id, string Subject, DateTimeOffset SentAt
 /// session and reads nothing that belongs to anyone else (AGENTS.md, invariant 2). No staff notes,
 /// no internal statuses, no skipped steps.
 /// </summary>
-public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTokens tokens, MessageService messages)
+public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTokens tokens, MessageService messages, SchedulingService scheduling)
 {
     public async Task<PortalView?> GetViewAsync(int candidateId, CancellationToken ct = default)
     {
@@ -68,6 +70,7 @@ public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTok
             .Select(m => new { m.Id, m.MessageKey, m.Subject, m.SentAt })
             .ToListAsync(ct);
         var now = clock.GetUtcNow();
+        var bookings = await scheduling.GetPortalBookingsAsync(candidateId, ct);
 
         var steps = candidate.Steps
             .Where(s => s.Status != StepStatus.Skipped)
@@ -96,7 +99,8 @@ public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTok
                         : null,
                     ContactFor(candidate, d.Owner),
                     sent.Where(m => keys.Contains(m.MessageKey)).Select(m => new PortalMessageLink(m.Id, m.Subject, m.SentAt)).ToList(),
-                    state == PortalStepState.Done ? s.CompletedAt : null);
+                    state == PortalStepState.Done ? s.CompletedAt : null,
+                    bookings.GetValueOrDefault(d.Key));
             })
             .ToList();
 
