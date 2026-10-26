@@ -57,10 +57,34 @@ public sealed class MessageService(
     /// <summary>Stands in for a staff member when the candidate asked for the message themselves.</summary>
     private static StaffMember OnCandidateRequest() => new() { Name = "UC Davis Health", Email = "" };
 
-    public async Task<MessagePreview?> PreviewAsync(int candidateId, string key, StaffMember sender, CancellationToken ct = default)
+    public async Task<MessagePreview?> PreviewAsync(int candidateId, string key, StaffMember sender, CancellationToken ct = default) =>
+        await ToPreviewAsync(await DraftAsync(candidateId, key, sender, clock.GetUtcNow(), ct), sender, ct);
+
+    /// <summary>
+    /// Wording not saved yet (the template editor), filled in for one candidate exactly as it would send.
+    /// Nothing is recorded. Appointment emails are filled with <see cref="ExampleAppointment"/>.
+    /// </summary>
+    public async Task<MessagePreview?> PreviewDraftAsync(
+        int candidateId, MessageTemplate edit, StaffMember sender, CancellationToken ct = default)
     {
-        var draft = await DraftAsync(candidateId, key, sender, clock.GetUtcNow(), ct);
+        var now = clock.GetUtcNow();
+        var example = SystemMessages.Appointment.Contains(edit.Key) ? ExampleAppointment(now) : null;
+        return await ToPreviewAsync(await DraftAsync(candidateId, edit.Key, sender, now, ct, example, edit), sender, ct);
+    }
+
+    /// <summary>A stand-in appointment two days out, so the editor can show an appointment email filled in.</summary>
+    public static AppointmentFacts ExampleAppointment(DateTimeOffset now)
+    {
+        var start = BusinessCalendar.ToPacific(now).Date.AddDays(2).AddHours(9);
+        return new AppointmentFacts("Example appointment", start, start.AddMinutes(15), "Example location", null,
+            start.AddHours(-24), start.AddDays(-1));
+    }
+
+    private async Task<MessagePreview?> ToPreviewAsync(Draft? draft, StaffMember sender, CancellationToken ct)
+    {
         if (draft is null) return null;
+        var candidateId = draft.Candidate.Id;
+        var key = draft.Template.Key;
 
         var timesSent = await db.SentMessages.CountAsync(m => m.CandidateId == candidateId && m.MessageKey == key, ct);
         return new MessagePreview(
@@ -259,10 +283,11 @@ public sealed class MessageService(
     }
 
     private async Task<Draft?> DraftAsync(
-        int candidateId, string key, StaffMember sender, DateTimeOffset now, CancellationToken ct, AppointmentFacts? appointment = null)
+        int candidateId, string key, StaffMember sender, DateTimeOffset now, CancellationToken ct,
+        AppointmentFacts? appointment = null, MessageTemplate? edit = null)
     {
         var candidate = await JourneyData.CandidatesWithJourney(db).SingleOrDefaultAsync(c => c.Id == candidateId, ct);
-        var template = await db.MessageTemplates
+        var template = edit ?? await db.MessageTemplates
             .Include(t => t.Sections)
             .Where(t => t.Key == key)
             .OrderByDescending(t => t.Version)

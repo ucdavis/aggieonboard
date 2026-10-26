@@ -1,3 +1,4 @@
+import type { CandidateCondition } from '@/queries/admin.ts';
 import type {
   I9Method,
   JourneyPhase,
@@ -48,6 +49,20 @@ export const roleLabel: Record<StaffRole, string> = {
   OnboardingSpecialist: 'Onboarding specialist',
   Recruiter: 'Recruiter',
   RecruitingAssistant: 'Recruiting assistant',
+};
+
+/** Who a message section, or a step, is for. */
+export const conditionLabel: Record<CandidateCondition, string> = {
+  Always: 'Everyone',
+  DmvPullNotice: 'Needs the DMV Employer Pull Notice',
+  DrugScreen: 'Needs a drug screen',
+  Fingerprinting: 'Needs fingerprinting',
+  HasDegrees: 'Has degrees to verify',
+  HasLicenses: 'Has licenses or certifications to verify',
+  HasQualifications: 'Has qualifications to verify',
+  Parking: 'Eligible for parking',
+  PositionDescription: 'Needs a position description',
+  RemoteI9: 'Chose remote I-9',
 };
 
 export const i9Label: Record<I9Method, string> = {

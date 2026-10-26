@@ -19,6 +19,14 @@ export const staffUser = {
 export const meAsStaff = () =>
   http.get('/api/user/me', () => HttpResponse.json(staffUser));
 
+export const meAsAdmin = () =>
+  http.get('/api/user/me', () =>
+    HttpResponse.json({
+      ...staffUser,
+      roles: [...staffUser.roles, 'Scheduling', 'Admin'],
+    })
+  );
+
 export const pipelineRow = (
   overrides: Partial<PipelineRow> = {}
 ): PipelineRow => ({

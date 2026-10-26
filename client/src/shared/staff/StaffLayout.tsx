@@ -4,13 +4,15 @@ import { AccessUnavailable } from './AccessUnavailable.tsx';
 
 /**
  * The staff app's frame. Journey staff ("Staff") get the pipeline; members of a team that runs
- * appointments ("Scheduling") get the schedule; someone with neither sees Access unavailable. The
+ * appointments ("Scheduling") get the schedule; admins also get Admin. Someone with neither of the
+ * first two sees Access unavailable. The
  * API enforces the same rules, so this only decides what each person is offered.
  */
 export function StaffLayout() {
   const user = useUser();
   const journey = user.roles.includes('Staff');
   const scheduling = user.roles.includes('Scheduling');
+  const admin = user.roles.includes('Admin');
   if (!journey && !scheduling) {
     return <AccessUnavailable />;
   }
@@ -47,6 +49,14 @@ export function StaffLayout() {
                 to="/schedule"
               >
                 Schedule
+              </Link>
+            )}
+            {admin && (
+              <Link
+                activeProps={{ className: 'underline underline-offset-4' }}
+                to="/admin"
+              >
+                Admin
               </Link>
             )}
           </nav>

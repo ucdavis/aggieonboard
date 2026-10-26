@@ -61,6 +61,12 @@ public static partial class MergeFields
 
     public static readonly IReadOnlySet<string> Names = All.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
 
+    /// <summary>Fields only an appointment email has a value for; any other message using one could never send.</summary>
+    public static readonly IReadOnlySet<string> AppointmentOnly = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "AppointmentName", "AppointmentTime", "AppointmentPlace", "AppointmentChangeDeadline", "PreviousAppointmentTime",
+    };
+
     /// <summary>The distinct field names a piece of template text uses, in order of first use.</summary>
     public static IReadOnlyList<string> In(string text) =>
         Placeholder().Matches(text).Select(m => m.Groups[1].Value).Distinct().ToList();
