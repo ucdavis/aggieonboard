@@ -42,4 +42,7 @@ public static class AppRoles
 
     /// <summary>Members of a team that runs appointments: its hours and day roster.</summary>
     public const string Scheduling = "Scheduling";
+
+    /// <summary>An admin viewing the app as this person (Admin → Emulate). Read-only while it lasts.</summary>
+    public const string Emulating = "Emulating";
 }

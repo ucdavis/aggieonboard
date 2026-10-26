@@ -9,6 +9,7 @@ const sections = [
   { label: 'Templates', to: '/admin/templates' },
   { label: 'Settings', to: '/admin/settings' },
   { label: 'Staff', to: '/admin/staff' },
+  { label: 'Emulate', to: '/admin/emulate' },
   { label: 'History', to: '/admin/history' },
 ] as const;
 

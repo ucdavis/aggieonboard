@@ -16,6 +16,7 @@ import { Route as CTokenRouteImport } from './routes/c/$token';
 import { Route as PortalIndexRouteImport } from './routes/portal/index';
 import { Route as PortalLinkRouteImport } from './routes/portal/link';
 import { Route as authenticatedAdminIndexRouteImport } from './routes/(authenticated)/admin/index';
+import { Route as authenticatedAdminEmulateRouteImport } from './routes/(authenticated)/admin/emulate';
 import { Route as authenticatedAdminHistoryRouteImport } from './routes/(authenticated)/admin/history';
 import { Route as authenticatedAdminSettingsRouteImport } from './routes/(authenticated)/admin/settings';
 import { Route as authenticatedAdminStaffRouteImport } from './routes/(authenticated)/admin/staff';
@@ -62,6 +63,12 @@ const authenticatedAdminIndexRoute = authenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => authenticatedAdminRouteRoute,
 } as any);
+const authenticatedAdminEmulateRoute =
+  authenticatedAdminEmulateRouteImport.update({
+    id: '/emulate',
+    path: '/emulate',
+    getParentRoute: () => authenticatedAdminRouteRoute,
+  } as any);
 const authenticatedAdminHistoryRoute =
   authenticatedAdminHistoryRouteImport.update({
     id: '/history',
@@ -133,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/portal/link': typeof PortalLinkRoute;
   '/': typeof authenticatedIndexRoute;
   '/portal/': typeof PortalIndexRoute;
+  '/admin/emulate': typeof authenticatedAdminEmulateRoute;
   '/admin/history': typeof authenticatedAdminHistoryRoute;
   '/admin/settings': typeof authenticatedAdminSettingsRoute;
   '/admin/staff': typeof authenticatedAdminStaffRoute;
@@ -151,6 +159,7 @@ export interface FileRoutesByTo {
   '/portal/link': typeof PortalLinkRoute;
   '/': typeof authenticatedIndexRoute;
   '/portal': typeof PortalIndexRoute;
+  '/admin/emulate': typeof authenticatedAdminEmulateRoute;
   '/admin/history': typeof authenticatedAdminHistoryRoute;
   '/admin/settings': typeof authenticatedAdminSettingsRoute;
   '/admin/staff': typeof authenticatedAdminStaffRoute;
@@ -172,6 +181,7 @@ export interface FileRoutesById {
   '/portal/link': typeof PortalLinkRoute;
   '/(authenticated)/': typeof authenticatedIndexRoute;
   '/portal/': typeof PortalIndexRoute;
+  '/(authenticated)/admin/emulate': typeof authenticatedAdminEmulateRoute;
   '/(authenticated)/admin/history': typeof authenticatedAdminHistoryRoute;
   '/(authenticated)/admin/settings': typeof authenticatedAdminSettingsRoute;
   '/(authenticated)/admin/staff': typeof authenticatedAdminStaffRoute;
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
     | '/portal/link'
     | '/'
     | '/portal/'
+    | '/admin/emulate'
     | '/admin/history'
     | '/admin/settings'
     | '/admin/staff'
@@ -211,6 +222,7 @@ export interface FileRouteTypes {
     | '/portal/link'
     | '/'
     | '/portal'
+    | '/admin/emulate'
     | '/admin/history'
     | '/admin/settings'
     | '/admin/staff'
@@ -231,6 +243,7 @@ export interface FileRouteTypes {
     | '/portal/link'
     | '/(authenticated)/'
     | '/portal/'
+    | '/(authenticated)/admin/emulate'
     | '/(authenticated)/admin/history'
     | '/(authenticated)/admin/settings'
     | '/(authenticated)/admin/staff'
@@ -302,6 +315,13 @@ declare module '@tanstack/react-router' {
       path: '/';
       fullPath: '/admin/';
       preLoaderRoute: typeof authenticatedAdminIndexRouteImport;
+      parentRoute: typeof authenticatedAdminRouteRoute;
+    };
+    '/(authenticated)/admin/emulate': {
+      id: '/(authenticated)/admin/emulate';
+      path: '/emulate';
+      fullPath: '/admin/emulate';
+      preLoaderRoute: typeof authenticatedAdminEmulateRouteImport;
       parentRoute: typeof authenticatedAdminRouteRoute;
     };
     '/(authenticated)/admin/history': {
@@ -385,6 +405,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface authenticatedAdminRouteRouteChildren {
+  authenticatedAdminEmulateRoute: typeof authenticatedAdminEmulateRoute;
   authenticatedAdminHistoryRoute: typeof authenticatedAdminHistoryRoute;
   authenticatedAdminSettingsRoute: typeof authenticatedAdminSettingsRoute;
   authenticatedAdminStaffRoute: typeof authenticatedAdminStaffRoute;
@@ -395,6 +416,7 @@ interface authenticatedAdminRouteRouteChildren {
 
 const authenticatedAdminRouteRouteChildren: authenticatedAdminRouteRouteChildren =
   {
+    authenticatedAdminEmulateRoute: authenticatedAdminEmulateRoute,
     authenticatedAdminHistoryRoute: authenticatedAdminHistoryRoute,
     authenticatedAdminSettingsRoute: authenticatedAdminSettingsRoute,
     authenticatedAdminStaffRoute: authenticatedAdminStaffRoute,

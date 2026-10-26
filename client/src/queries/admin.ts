@@ -297,3 +297,67 @@ export const useSaveStaff = () => {
     },
   });
 };
+
+// Emulation: see the app as a staff member, or a candidate's checklist. Read-only.
+
+export type EmulationTargets = {
+  candidates: {
+    currentStep: string | null;
+    id: number;
+    name: string;
+    positionTitle: string;
+  }[];
+  staff: {
+    email: string;
+    id: number;
+    isAdmin: boolean;
+    name: string;
+    role: StaffRole;
+    teams: string[];
+  }[];
+};
+
+export type EmulationStatus = {
+  role: StaffRole;
+  signedInAs: string;
+  viewingAs: string;
+};
+
+export const emulationTargetsQueryOptions = () =>
+  queryOptions({
+    queryFn: () => fetchJson<EmulationTargets>('/api/admin/emulation'),
+    queryKey: ['admin', 'emulation'] as const,
+  });
+
+/** Null when nobody is being emulated (the API answers 204). */
+export const emulationStatusQueryOptions = () =>
+  queryOptions({
+    queryFn: async () =>
+      (await fetchJson<EmulationStatus | ''>('/api/user/emulation')) || null,
+    queryKey: ['user', 'emulation'] as const,
+  });
+
+// Starting or stopping changes who the whole app shows, so each reloads the page rather than
+// patching cached data.
+export const useEmulateStaff = () =>
+  useMutation({
+    mutationFn: (id: number) =>
+      fetchJson<void>(`/api/admin/emulation/staff/${id}`, { method: 'POST' }),
+    onSuccess: () => window.location.assign('/'),
+  });
+
+export const useEmulateCandidate = () =>
+  useMutation({
+    mutationFn: (id: number) =>
+      fetchJson<void>(`/api/admin/emulation/candidates/${id}`, {
+        method: 'POST',
+      }),
+    onSuccess: () => window.location.assign('/portal'),
+  });
+
+export const useStopEmulation = () =>
+  useMutation({
+    mutationFn: () =>
+      fetchJson<void>('/api/user/emulation/stop', { method: 'POST' }),
+    onSuccess: () => window.location.assign('/admin/emulate'),
+  });

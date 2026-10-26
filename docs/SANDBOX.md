@@ -30,7 +30,7 @@ Try these flows:
 10. As Sample User (an admin), open **Admin**. **Templates**: edit a message, **Preview the wording above** for a
     candidate, and save it as the next version (a made-up `{{Field}}` is refused). **Settings**: change
     `ClearanceBusinessDaysBeforeStart` or a step's deadline and see how many due dates moved; add a holiday. **Staff**:
-    add Schedule User to another team and their schedule shows it on the next page load. **History** lists each change.
+    add Schedule User to another team and their schedule shows it on the next page load. **Emulate**: **View as** any staff member (a banner says who, and changes are off until **Stop**), or **View checklist** for any new employee. **History** lists each change, including who emulated whom.
 11. Visit `/login` and switch to Schedule User, a police-department team member: only the schedule, only the two police locations, and no links into candidate records.
 12. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
 13. Visit `/login` and sign out. `/api/user/me` returns `401`.

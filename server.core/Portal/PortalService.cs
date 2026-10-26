@@ -49,7 +49,8 @@ public sealed record PortalView(
     string Department,
     DateOnly? AnticipatedStartDate,
     DateOnly? ClearanceDeadline,
-    IReadOnlyList<PortalStep> Steps);
+    IReadOnlyList<PortalStep> Steps,
+    string? ViewedBy = null);
 
 public sealed record PortalMessage(int Id, string Subject, DateTimeOffset SentAt, string Html, string Text);
 

@@ -69,6 +69,14 @@ public static class CandidateAuthentication
     public static ClaimsPrincipal CreatePrincipal(int candidateId) =>
         new(new ClaimsIdentity([new Claim(CandidateIdClaim, candidateId.ToString())], Scheme));
 
+    /// <summary>An admin viewing this candidate's checklist (Admin → Emulate). Read-only: see <see cref="Emulation"/>.</summary>
+    public static ClaimsPrincipal CreateEmulatedPrincipal(int candidateId, string adminName) =>
+        new(new ClaimsIdentity(
+            [new Claim(CandidateIdClaim, candidateId.ToString()), new Claim(Emulation.ViewedByClaim, adminName)], Scheme));
+
+    /// <summary>The admin viewing this checklist, or null when it's the candidate themself.</summary>
+    public static string? ViewedBy(ClaimsPrincipal? principal) => principal?.FindFirst(Emulation.ViewedByClaim)?.Value;
+
     public static int? CandidateId(ClaimsPrincipal? principal) =>
         int.TryParse(principal?.FindFirst(CandidateIdClaim)?.Value, out var id) ? id : null;
 }

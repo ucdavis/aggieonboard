@@ -72,6 +72,8 @@ export type PortalView = {
   firstName: string;
   positionTitle: string;
   steps: PortalStep[];
+  /** The admin viewing this checklist (Admin → Emulate), read-only; absent for the candidate. */
+  viewedBy?: string | null;
 };
 
 export type PortalMessage = {

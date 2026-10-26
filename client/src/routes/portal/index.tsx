@@ -77,6 +77,26 @@ function PortalPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {view.viewedBy && (
+            <div className="alert alert-warning" role="status">
+              <span>
+                You&apos;re viewing {view.firstName}&apos;s checklist as{' '}
+                {view.viewedBy}. Read-only.
+              </span>
+              <button
+                className="btn btn-sm"
+                disabled={signOut.isPending}
+                onClick={() =>
+                  signOut.mutate(undefined, {
+                    onSuccess: () => window.location.assign('/admin/emulate'),
+                  })
+                }
+                type="button"
+              >
+                Back to Admin
+              </button>
+            </div>
+          )}
           {notice && (
             <div className="alert alert-success" role="status">
               <span>{notice}</span>

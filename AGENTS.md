@@ -92,6 +92,10 @@ reach parity with.
   invariant 6, so keep new merge fields in `MergeFields` (and `AppointmentOnly` when only appointment emails have them).
   A change that moves deadlines must recompute open due dates and note each move in the candidate's history. Changes
   to shared data are `AuditEvent`s with no candidate, shown on the History tab.
+- Emulation (Admin → Emulate): `server/Helpers/Emulation.cs`. An admin's staff cookie carries the emulated staff ID and
+  `UserService.GetStaffMemberAsync` returns that person (`GetSignedInStaffMemberAsync` is the real one); an emulated
+  checklist is a candidate cookie with a viewed-by claim. `UseReadOnlyEmulation` refuses every change under `/api` while
+  either lasts. Keep it that way: nothing may be recorded, booked or emailed in someone else's name.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what

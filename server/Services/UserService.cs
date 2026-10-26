@@ -9,8 +9,14 @@ public interface IUserService
 {
     Task<ClaimsPrincipal?> UpdateUserPrincipalIfNeeded(ClaimsPrincipal principal);
 
-    /// <summary>The active staff member this sign-in belongs to, or null for anyone not on the whitelist.</summary>
+    /// <summary>
+    /// Who the app treats this sign-in as: the active staff member it belongs to, or the one an admin is
+    /// emulating (read-only). Null for anyone not on the whitelist.
+    /// </summary>
     Task<StaffMember?> GetStaffMemberAsync(ClaimsPrincipal principal, CancellationToken ct = default);
+
+    /// <summary>The person actually signed in, ignoring emulation.</summary>
+    Task<StaffMember?> GetSignedInStaffMemberAsync(ClaimsPrincipal principal, CancellationToken ct = default);
 }
 
 public class UserService : IUserService
@@ -34,6 +40,18 @@ public class UserService : IUserService
         ?? principal.FindFirst("email")?.Value;
 
     public async Task<StaffMember?> GetStaffMemberAsync(ClaimsPrincipal principal, CancellationToken ct = default)
+    {
+        var signedIn = await GetSignedInStaffMemberAsync(principal, ct);
+        if (signedIn is not { IsAdmin: true } || Server.Helpers.Emulation.EmulatedStaffId(principal) is not { } id || id == signedIn.Id)
+        {
+            return signedIn;
+        }
+
+        // An admin viewing as someone: that person's roles and candidates, read-only (Emulation).
+        return await _dbContext.Staff.SingleOrDefaultAsync(s => s.Id == id && s.IsActive, ct) ?? signedIn;
+    }
+
+    public async Task<StaffMember?> GetSignedInStaffMemberAsync(ClaimsPrincipal principal, CancellationToken ct = default)
     {
         var email = EmailOf(principal)?.Trim();
         if (string.IsNullOrEmpty(email)) return null;
@@ -60,6 +78,12 @@ public class UserService : IUserService
             roles.Add(AppRoles.Scheduling);
         }
         if (staff.IsAdmin) roles.Add(AppRoles.Admin);
+
+        // Tells the client to show the "viewing as" banner; the API is read-only meanwhile (Emulation).
+        if (Server.Helpers.Emulation.EmulatedStaffId(principal) is not null && (await GetSignedInStaffMemberAsync(principal))?.Id != staff.Id)
+        {
+            roles.Add(AppRoles.Emulating);
+        }
         return roles;
     }
 

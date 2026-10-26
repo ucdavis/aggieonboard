@@ -17,10 +17,12 @@ namespace Server.Controllers.Admin;
 [JourneyErrors]
 public abstract class AdminControllerBase(IUserService users) : ControllerBase
 {
+    protected IUserService Users { get; } = users;
+
     /// <summary>Changes are recorded as a named admin. A missing row means the whitelist changed mid-request.</summary>
     protected async Task<ActionResult<T>> AsAdmin<T>(Func<StaffMember, Task<ActionResult<T>>> change, CancellationToken ct)
     {
-        var me = await users.GetStaffMemberAsync(User, ct);
+        var me = await Users.GetStaffMemberAsync(User, ct);
         return me is null ? Forbid() : await change(me);
     }
 }

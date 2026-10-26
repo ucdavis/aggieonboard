@@ -395,7 +395,9 @@ every task, in order, even when a task sends them out to another app; staff work
   stages stay hidden until they open.
 - **Staff see a timeline by group:** each candidate's steps clustered by the responsible group, each one expanding.
 
-Steps: (1) ✅ sandbox sign-in names the groups and adds **New employee view**; (2) ✅ roles become Recruiter, Service
+Steps: (1) ✅ sandbox sign-in names the groups and adds **New employee view**, and Admin → **Emulate** shows the app as
+any staff member or any new employee's checklist (read-only: every change under `/api` is refused while it lasts, and
+each view is in the history); (2) ✅ roles become Recruiter, Service
 Channel and Unit HR (migration `StaffGroups` moves recruiting assistants into the recruiter slot and renames stored
 roles; message copy still says "onboarding specialist" and its fields keep their names); (3) stages and automatic
 opening; (4) emails held for an hour of inactivity; (5) the portal shows only the current stage; (6) the staff timeline.

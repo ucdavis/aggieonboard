@@ -191,6 +191,7 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseReadOnlyEmulation();
     app.UseRateLimiter();
 
     // enrich every log with request context

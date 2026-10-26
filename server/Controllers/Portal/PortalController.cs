@@ -86,7 +86,9 @@ public class PortalController(PortalService portal, PortalTokens tokens, Schedul
 
     [HttpGet("me")]
     public async Task<ActionResult<PortalView>> Me(CancellationToken ct) =>
-        await portal.GetViewAsync(CurrentCandidate, ct) is { } view ? view : Unauthorized();
+        await portal.GetViewAsync(CurrentCandidate, ct) is { } view
+            ? view with { ViewedBy = CandidateAuthentication.ViewedBy(User) }
+            : Unauthorized();
 
     [HttpGet("messages/{sentId:int}")]
     public async Task<ActionResult<PortalMessage>> Message(int sentId, CancellationToken ct) =>
