@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-26 — Phases 0–5 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Phase 5 (scheduling and candidate answers: 5a, 5b, 5c) done; next: Phase 6 (admin).**
+> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: local tweaks (copy review, open questions) until Phase 7 (hosting).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -360,7 +360,26 @@ Action needed; marking attended completes it where the table says so. Booking in
   starts 11B), the ATI number after fingerprinting, and new template versions of 11A, 11B and 12 that point to the
   checklist.
 
-**Phase 6: Admin.** Template editor (versioned, with merge-field validation), settings and holiday
+**Phase 6: Admin.** ✅ 2026-10-26. `/api/admin` (role Admin, from `StaffMember.IsAdmin`) and an **Admin** tab:
+- **Templates (6a):** every message at its sending version; the editor changes subject and sections (each with its
+  audience), previews unsaved wording for any candidate (appointment emails with an example appointment), and saves
+  the next version. Saving refuses unknown merge fields, appointment fields outside appointment emails, any field in a
+  vendor's wording, leftover `[placeholders]`, malformed `{{ fields }}`, `<!-- if: -->` markers, and an edit started
+  from an older version. Earlier versions stay readable and can be reopened as the start of a new one.
+- **Settings (6b):** the process settings (checked by kind; a confirmed setting needs a value), each step's deadline
+  rule (anchor, amount, unit; start-date rules count days or weeks), and holidays. A change that moves deadlines
+  recomputes every open due date staff didn't set by hand and writes each move into that candidate's history.
+- **Staff (6c):** the sign-in whitelist: name, email, phone, role (including schedule-only team member), admin, active,
+  and schedule teams. An admin can't remove their own access; a role change waits until no candidate names the person
+  in the old role; deactivating says how many candidates still need reassigning. Teams and their locations are seeded,
+  not created here.
+- **History:** every change to shared data, with who made it.
+Verified on the sandbox: Schedule User and Basic User get 403 from `/api/admin`; message 9 v2 saved and became what
+staff preview; a stale save 409s; clearance days 6 → 8 moved four of Casey's due dates (each in Casey's history); drug
+screen → 72 hours and a holiday add/remove recomputed Morgan's; adding Schedule User to Employee Health showed that
+location on their next request, and deactivating them gave 403 until restored. Not built: appointment types (window,
+cutoff, length) and locations are still edited only in seed data; the Schedule's own pages handle hours and sessions.
+Planned: template editor (versioned, with merge-field validation), settings and holiday
 calendar, staff user management.
 
 **Phase 7: Pilot readiness.** Accessibility pass, `/security-review`, and Azure deploy via the template's

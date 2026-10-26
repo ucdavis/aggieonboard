@@ -11,7 +11,9 @@ export type StaffRole =
   | 'RecruitingAssistant'
   | 'Recruiter'
   | 'OnboardingSpecialist'
-  | 'LearningAndDevelopment';
+  | 'LearningAndDevelopment'
+  /** Schedule only: no pipeline or candidate records. */
+  | 'TeamMember';
 
 export type JourneyPhase = 'TalentAcquisition' | 'PreEmployment' | 'FirstDay';
 

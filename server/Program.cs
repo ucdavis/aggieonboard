@@ -68,6 +68,7 @@ try
     builder.Services.AddScoped<PortalAnswers>();
     builder.Services.AddScoped<Server.Core.Admin.TemplateAdmin>();
     builder.Services.AddScoped<Server.Core.Admin.SettingsAdmin>();
+    builder.Services.AddScoped<Server.Core.Admin.StaffAdmin>();
     builder.Services.AddScoped<MessageService>();
 
     // Anonymous portal endpoints (link requests, sign-in) are limited per client address.

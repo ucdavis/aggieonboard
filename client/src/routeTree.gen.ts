@@ -8,185 +8,185 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root';
-import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route';
-import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index';
-import { Route as authenticatedAdminRouteRouteImport } from './routes/(authenticated)/admin/route';
-import { Route as CTokenRouteImport } from './routes/c/$token';
-import { Route as PortalIndexRouteImport } from './routes/portal/index';
-import { Route as PortalLinkRouteImport } from './routes/portal/link';
-import { Route as authenticatedAdminIndexRouteImport } from './routes/(authenticated)/admin/index';
-import { Route as authenticatedAdminHistoryRouteImport } from './routes/(authenticated)/admin/history';
-import { Route as authenticatedAdminSettingsRouteImport } from './routes/(authenticated)/admin/settings';
-import { Route as authenticatedAdminStaffRouteImport } from './routes/(authenticated)/admin/staff';
-import { Route as authenticatedCandidatesNewRouteImport } from './routes/(authenticated)/candidates/new';
-import { Route as authenticatedScheduleIndexRouteImport } from './routes/(authenticated)/schedule/index';
-import { Route as PortalMessagesMessageIdRouteImport } from './routes/portal/messages/$messageId';
-import { Route as authenticatedAdminTemplatesIndexRouteImport } from './routes/(authenticated)/admin/templates/index';
-import { Route as authenticatedAdminTemplatesTemplateKeyRouteImport } from './routes/(authenticated)/admin/templates/$templateKey';
-import { Route as authenticatedCandidatesCandidateIdIndexRouteImport } from './routes/(authenticated)/candidates/$candidateId/index';
-import { Route as authenticatedCandidatesCandidateIdEditRouteImport } from './routes/(authenticated)/candidates/$candidateId/edit';
-import { Route as authenticatedScheduleLocationsLocationIdRouteImport } from './routes/(authenticated)/schedule/locations/$locationId';
+import { Route as rootRouteImport } from './routes/__root'
+import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route'
+import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index'
+import { Route as authenticatedAdminRouteRouteImport } from './routes/(authenticated)/admin/route'
+import { Route as CTokenRouteImport } from './routes/c/$token'
+import { Route as PortalIndexRouteImport } from './routes/portal/index'
+import { Route as PortalLinkRouteImport } from './routes/portal/link'
+import { Route as authenticatedAdminIndexRouteImport } from './routes/(authenticated)/admin/index'
+import { Route as authenticatedAdminHistoryRouteImport } from './routes/(authenticated)/admin/history'
+import { Route as authenticatedAdminSettingsRouteImport } from './routes/(authenticated)/admin/settings'
+import { Route as authenticatedAdminStaffRouteImport } from './routes/(authenticated)/admin/staff'
+import { Route as authenticatedCandidatesNewRouteImport } from './routes/(authenticated)/candidates/new'
+import { Route as authenticatedScheduleIndexRouteImport } from './routes/(authenticated)/schedule/index'
+import { Route as PortalMessagesMessageIdRouteImport } from './routes/portal/messages/$messageId'
+import { Route as authenticatedAdminTemplatesIndexRouteImport } from './routes/(authenticated)/admin/templates/index'
+import { Route as authenticatedAdminTemplatesTemplateKeyRouteImport } from './routes/(authenticated)/admin/templates/$templateKey'
+import { Route as authenticatedCandidatesCandidateIdIndexRouteImport } from './routes/(authenticated)/candidates/$candidateId/index'
+import { Route as authenticatedCandidatesCandidateIdEditRouteImport } from './routes/(authenticated)/candidates/$candidateId/edit'
+import { Route as authenticatedScheduleLocationsLocationIdRouteImport } from './routes/(authenticated)/schedule/locations/$locationId'
 
 const authenticatedRouteRoute = authenticatedRouteRouteImport.update({
   id: '/(authenticated)',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const authenticatedIndexRoute = authenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => authenticatedRouteRoute,
-} as any);
+} as any)
 const authenticatedAdminRouteRoute = authenticatedAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => authenticatedRouteRoute,
-} as any);
+} as any)
 const CTokenRoute = CTokenRouteImport.update({
   id: '/c/$token',
   path: '/c/$token',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PortalIndexRoute = PortalIndexRouteImport.update({
   id: '/portal/',
   path: '/portal/',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const PortalLinkRoute = PortalLinkRouteImport.update({
   id: '/portal/link',
   path: '/portal/link',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const authenticatedAdminIndexRoute = authenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => authenticatedAdminRouteRoute,
-} as any);
+} as any)
 const authenticatedAdminHistoryRoute =
   authenticatedAdminHistoryRouteImport.update({
     id: '/history',
     path: '/history',
     getParentRoute: () => authenticatedAdminRouteRoute,
-  } as any);
+  } as any)
 const authenticatedAdminSettingsRoute =
   authenticatedAdminSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
     getParentRoute: () => authenticatedAdminRouteRoute,
-  } as any);
+  } as any)
 const authenticatedAdminStaffRoute = authenticatedAdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
   getParentRoute: () => authenticatedAdminRouteRoute,
-} as any);
+} as any)
 const authenticatedCandidatesNewRoute =
   authenticatedCandidatesNewRouteImport.update({
     id: '/candidates/new',
     path: '/candidates/new',
     getParentRoute: () => authenticatedRouteRoute,
-  } as any);
+  } as any)
 const authenticatedScheduleIndexRoute =
   authenticatedScheduleIndexRouteImport.update({
     id: '/schedule/',
     path: '/schedule/',
     getParentRoute: () => authenticatedRouteRoute,
-  } as any);
+  } as any)
 const PortalMessagesMessageIdRoute = PortalMessagesMessageIdRouteImport.update({
   id: '/portal/messages/$messageId',
   path: '/portal/messages/$messageId',
   getParentRoute: () => rootRouteImport,
-} as any);
+} as any)
 const authenticatedAdminTemplatesIndexRoute =
   authenticatedAdminTemplatesIndexRouteImport.update({
     id: '/templates/',
     path: '/templates/',
     getParentRoute: () => authenticatedAdminRouteRoute,
-  } as any);
+  } as any)
 const authenticatedAdminTemplatesTemplateKeyRoute =
   authenticatedAdminTemplatesTemplateKeyRouteImport.update({
     id: '/templates/$templateKey',
     path: '/templates/$templateKey',
     getParentRoute: () => authenticatedAdminRouteRoute,
-  } as any);
+  } as any)
 const authenticatedCandidatesCandidateIdIndexRoute =
   authenticatedCandidatesCandidateIdIndexRouteImport.update({
     id: '/candidates/$candidateId/',
     path: '/candidates/$candidateId/',
     getParentRoute: () => authenticatedRouteRoute,
-  } as any);
+  } as any)
 const authenticatedCandidatesCandidateIdEditRoute =
   authenticatedCandidatesCandidateIdEditRouteImport.update({
     id: '/candidates/$candidateId/edit',
     path: '/candidates/$candidateId/edit',
     getParentRoute: () => authenticatedRouteRoute,
-  } as any);
+  } as any)
 const authenticatedScheduleLocationsLocationIdRoute =
   authenticatedScheduleLocationsLocationIdRouteImport.update({
     id: '/schedule/locations/$locationId',
     path: '/schedule/locations/$locationId',
     getParentRoute: () => authenticatedRouteRoute,
-  } as any);
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/admin': typeof authenticatedAdminRouteRouteWithChildren;
-  '/c/$token': typeof CTokenRoute;
-  '/portal/link': typeof PortalLinkRoute;
-  '/': typeof authenticatedIndexRoute;
-  '/portal/': typeof PortalIndexRoute;
-  '/admin/history': typeof authenticatedAdminHistoryRoute;
-  '/admin/settings': typeof authenticatedAdminSettingsRoute;
-  '/admin/staff': typeof authenticatedAdminStaffRoute;
-  '/candidates/new': typeof authenticatedCandidatesNewRoute;
-  '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute;
-  '/admin/': typeof authenticatedAdminIndexRoute;
-  '/schedule/': typeof authenticatedScheduleIndexRoute;
-  '/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute;
-  '/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute;
-  '/schedule/locations/$locationId': typeof authenticatedScheduleLocationsLocationIdRoute;
-  '/admin/templates/': typeof authenticatedAdminTemplatesIndexRoute;
-  '/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute;
+  '/admin': typeof authenticatedAdminRouteRouteWithChildren
+  '/c/$token': typeof CTokenRoute
+  '/portal/link': typeof PortalLinkRoute
+  '/': typeof authenticatedIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/admin/history': typeof authenticatedAdminHistoryRoute
+  '/admin/settings': typeof authenticatedAdminSettingsRoute
+  '/admin/staff': typeof authenticatedAdminStaffRoute
+  '/candidates/new': typeof authenticatedCandidatesNewRoute
+  '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute
+  '/admin/': typeof authenticatedAdminIndexRoute
+  '/schedule/': typeof authenticatedScheduleIndexRoute
+  '/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute
+  '/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute
+  '/schedule/locations/$locationId': typeof authenticatedScheduleLocationsLocationIdRoute
+  '/admin/templates/': typeof authenticatedAdminTemplatesIndexRoute
+  '/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 export interface FileRoutesByTo {
-  '/c/$token': typeof CTokenRoute;
-  '/portal/link': typeof PortalLinkRoute;
-  '/': typeof authenticatedIndexRoute;
-  '/portal': typeof PortalIndexRoute;
-  '/admin/history': typeof authenticatedAdminHistoryRoute;
-  '/admin/settings': typeof authenticatedAdminSettingsRoute;
-  '/admin/staff': typeof authenticatedAdminStaffRoute;
-  '/candidates/new': typeof authenticatedCandidatesNewRoute;
-  '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute;
-  '/admin': typeof authenticatedAdminIndexRoute;
-  '/schedule': typeof authenticatedScheduleIndexRoute;
-  '/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute;
-  '/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute;
-  '/schedule/locations/$locationId': typeof authenticatedScheduleLocationsLocationIdRoute;
-  '/admin/templates': typeof authenticatedAdminTemplatesIndexRoute;
-  '/candidates/$candidateId': typeof authenticatedCandidatesCandidateIdIndexRoute;
+  '/c/$token': typeof CTokenRoute
+  '/portal/link': typeof PortalLinkRoute
+  '/': typeof authenticatedIndexRoute
+  '/portal': typeof PortalIndexRoute
+  '/admin/history': typeof authenticatedAdminHistoryRoute
+  '/admin/settings': typeof authenticatedAdminSettingsRoute
+  '/admin/staff': typeof authenticatedAdminStaffRoute
+  '/candidates/new': typeof authenticatedCandidatesNewRoute
+  '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute
+  '/admin': typeof authenticatedAdminIndexRoute
+  '/schedule': typeof authenticatedScheduleIndexRoute
+  '/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute
+  '/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute
+  '/schedule/locations/$locationId': typeof authenticatedScheduleLocationsLocationIdRoute
+  '/admin/templates': typeof authenticatedAdminTemplatesIndexRoute
+  '/candidates/$candidateId': typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport;
-  '/(authenticated)': typeof authenticatedRouteRouteWithChildren;
-  '/(authenticated)/admin': typeof authenticatedAdminRouteRouteWithChildren;
-  '/c/$token': typeof CTokenRoute;
-  '/portal/link': typeof PortalLinkRoute;
-  '/(authenticated)/': typeof authenticatedIndexRoute;
-  '/portal/': typeof PortalIndexRoute;
-  '/(authenticated)/admin/history': typeof authenticatedAdminHistoryRoute;
-  '/(authenticated)/admin/settings': typeof authenticatedAdminSettingsRoute;
-  '/(authenticated)/admin/staff': typeof authenticatedAdminStaffRoute;
-  '/(authenticated)/candidates/new': typeof authenticatedCandidatesNewRoute;
-  '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute;
-  '/(authenticated)/admin/': typeof authenticatedAdminIndexRoute;
-  '/(authenticated)/schedule/': typeof authenticatedScheduleIndexRoute;
-  '/(authenticated)/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute;
-  '/(authenticated)/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute;
-  '/(authenticated)/schedule/locations/$locationId': typeof authenticatedScheduleLocationsLocationIdRoute;
-  '/(authenticated)/admin/templates/': typeof authenticatedAdminTemplatesIndexRoute;
-  '/(authenticated)/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute;
+  __root__: typeof rootRouteImport
+  '/(authenticated)': typeof authenticatedRouteRouteWithChildren
+  '/(authenticated)/admin': typeof authenticatedAdminRouteRouteWithChildren
+  '/c/$token': typeof CTokenRoute
+  '/portal/link': typeof PortalLinkRoute
+  '/(authenticated)/': typeof authenticatedIndexRoute
+  '/portal/': typeof PortalIndexRoute
+  '/(authenticated)/admin/history': typeof authenticatedAdminHistoryRoute
+  '/(authenticated)/admin/settings': typeof authenticatedAdminSettingsRoute
+  '/(authenticated)/admin/staff': typeof authenticatedAdminStaffRoute
+  '/(authenticated)/candidates/new': typeof authenticatedCandidatesNewRoute
+  '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute
+  '/(authenticated)/admin/': typeof authenticatedAdminIndexRoute
+  '/(authenticated)/schedule/': typeof authenticatedScheduleIndexRoute
+  '/(authenticated)/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute
+  '/(authenticated)/candidates/$candidateId/edit': typeof authenticatedCandidatesCandidateIdEditRoute
+  '/(authenticated)/schedule/locations/$locationId': typeof authenticatedScheduleLocationsLocationIdRoute
+  '/(authenticated)/admin/templates/': typeof authenticatedAdminTemplatesIndexRoute
+  '/(authenticated)/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/admin'
     | '/c/$token'
@@ -204,8 +204,8 @@ export interface FileRouteTypes {
     | '/candidates/$candidateId/edit'
     | '/schedule/locations/$locationId'
     | '/admin/templates/'
-    | '/candidates/$candidateId/';
-  fileRoutesByTo: FileRoutesByTo;
+    | '/candidates/$candidateId/'
+  fileRoutesByTo: FileRoutesByTo
   to:
     | '/c/$token'
     | '/portal/link'
@@ -222,7 +222,7 @@ export interface FileRouteTypes {
     | '/candidates/$candidateId/edit'
     | '/schedule/locations/$locationId'
     | '/admin/templates'
-    | '/candidates/$candidateId';
+    | '/candidates/$candidateId'
   id:
     | '__root__'
     | '/(authenticated)'
@@ -242,155 +242,155 @@ export interface FileRouteTypes {
     | '/(authenticated)/candidates/$candidateId/edit'
     | '/(authenticated)/schedule/locations/$locationId'
     | '/(authenticated)/admin/templates/'
-    | '/(authenticated)/candidates/$candidateId/';
-  fileRoutesById: FileRoutesById;
+    | '/(authenticated)/candidates/$candidateId/'
+  fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  authenticatedRouteRoute: typeof authenticatedRouteRouteWithChildren;
-  CTokenRoute: typeof CTokenRoute;
-  PortalLinkRoute: typeof PortalLinkRoute;
-  PortalIndexRoute: typeof PortalIndexRoute;
-  PortalMessagesMessageIdRoute: typeof PortalMessagesMessageIdRoute;
+  authenticatedRouteRoute: typeof authenticatedRouteRouteWithChildren
+  CTokenRoute: typeof CTokenRoute
+  PortalLinkRoute: typeof PortalLinkRoute
+  PortalIndexRoute: typeof PortalIndexRoute
+  PortalMessagesMessageIdRoute: typeof PortalMessagesMessageIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
     '/(authenticated)': {
-      id: '/(authenticated)';
-      path: '';
-      fullPath: '';
-      preLoaderRoute: typeof authenticatedRouteRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/(authenticated)'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof authenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(authenticated)/': {
-      id: '/(authenticated)/';
-      path: '/';
-      fullPath: '/';
-      preLoaderRoute: typeof authenticatedIndexRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof authenticatedIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/(authenticated)/admin': {
-      id: '/(authenticated)/admin';
-      path: '/admin';
-      fullPath: '/admin';
-      preLoaderRoute: typeof authenticatedAdminRouteRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof authenticatedAdminRouteRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/c/$token': {
-      id: '/c/$token';
-      path: '/c/$token';
-      fullPath: '/c/$token';
-      preLoaderRoute: typeof CTokenRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/c/$token'
+      path: '/c/$token'
+      fullPath: '/c/$token'
+      preLoaderRoute: typeof CTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/': {
-      id: '/portal/';
-      path: '/portal';
-      fullPath: '/portal/';
-      preLoaderRoute: typeof PortalIndexRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/portal/'
+      path: '/portal'
+      fullPath: '/portal/'
+      preLoaderRoute: typeof PortalIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/portal/link': {
-      id: '/portal/link';
-      path: '/portal/link';
-      fullPath: '/portal/link';
-      preLoaderRoute: typeof PortalLinkRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/portal/link'
+      path: '/portal/link'
+      fullPath: '/portal/link'
+      preLoaderRoute: typeof PortalLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(authenticated)/admin/': {
-      id: '/(authenticated)/admin/';
-      path: '/';
-      fullPath: '/admin/';
-      preLoaderRoute: typeof authenticatedAdminIndexRouteImport;
-      parentRoute: typeof authenticatedAdminRouteRoute;
-    };
+      id: '/(authenticated)/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof authenticatedAdminIndexRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
     '/(authenticated)/admin/history': {
-      id: '/(authenticated)/admin/history';
-      path: '/history';
-      fullPath: '/admin/history';
-      preLoaderRoute: typeof authenticatedAdminHistoryRouteImport;
-      parentRoute: typeof authenticatedAdminRouteRoute;
-    };
+      id: '/(authenticated)/admin/history'
+      path: '/history'
+      fullPath: '/admin/history'
+      preLoaderRoute: typeof authenticatedAdminHistoryRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
     '/(authenticated)/admin/settings': {
-      id: '/(authenticated)/admin/settings';
-      path: '/settings';
-      fullPath: '/admin/settings';
-      preLoaderRoute: typeof authenticatedAdminSettingsRouteImport;
-      parentRoute: typeof authenticatedAdminRouteRoute;
-    };
+      id: '/(authenticated)/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof authenticatedAdminSettingsRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
     '/(authenticated)/admin/staff': {
-      id: '/(authenticated)/admin/staff';
-      path: '/staff';
-      fullPath: '/admin/staff';
-      preLoaderRoute: typeof authenticatedAdminStaffRouteImport;
-      parentRoute: typeof authenticatedAdminRouteRoute;
-    };
+      id: '/(authenticated)/admin/staff'
+      path: '/staff'
+      fullPath: '/admin/staff'
+      preLoaderRoute: typeof authenticatedAdminStaffRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
     '/(authenticated)/candidates/new': {
-      id: '/(authenticated)/candidates/new';
-      path: '/candidates/new';
-      fullPath: '/candidates/new';
-      preLoaderRoute: typeof authenticatedCandidatesNewRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/candidates/new'
+      path: '/candidates/new'
+      fullPath: '/candidates/new'
+      preLoaderRoute: typeof authenticatedCandidatesNewRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/(authenticated)/schedule/': {
-      id: '/(authenticated)/schedule/';
-      path: '/schedule';
-      fullPath: '/schedule/';
-      preLoaderRoute: typeof authenticatedScheduleIndexRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/schedule/'
+      path: '/schedule'
+      fullPath: '/schedule/'
+      preLoaderRoute: typeof authenticatedScheduleIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/portal/messages/$messageId': {
-      id: '/portal/messages/$messageId';
-      path: '/portal/messages/$messageId';
-      fullPath: '/portal/messages/$messageId';
-      preLoaderRoute: typeof PortalMessagesMessageIdRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
+      id: '/portal/messages/$messageId'
+      path: '/portal/messages/$messageId'
+      fullPath: '/portal/messages/$messageId'
+      preLoaderRoute: typeof PortalMessagesMessageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/(authenticated)/admin/templates/': {
-      id: '/(authenticated)/admin/templates/';
-      path: '/templates';
-      fullPath: '/admin/templates/';
-      preLoaderRoute: typeof authenticatedAdminTemplatesIndexRouteImport;
-      parentRoute: typeof authenticatedAdminRouteRoute;
-    };
+      id: '/(authenticated)/admin/templates/'
+      path: '/templates'
+      fullPath: '/admin/templates/'
+      preLoaderRoute: typeof authenticatedAdminTemplatesIndexRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
     '/(authenticated)/admin/templates/$templateKey': {
-      id: '/(authenticated)/admin/templates/$templateKey';
-      path: '/templates/$templateKey';
-      fullPath: '/admin/templates/$templateKey';
-      preLoaderRoute: typeof authenticatedAdminTemplatesTemplateKeyRouteImport;
-      parentRoute: typeof authenticatedAdminRouteRoute;
-    };
+      id: '/(authenticated)/admin/templates/$templateKey'
+      path: '/templates/$templateKey'
+      fullPath: '/admin/templates/$templateKey'
+      preLoaderRoute: typeof authenticatedAdminTemplatesTemplateKeyRouteImport
+      parentRoute: typeof authenticatedAdminRouteRoute
+    }
     '/(authenticated)/candidates/$candidateId/': {
-      id: '/(authenticated)/candidates/$candidateId/';
-      path: '/candidates/$candidateId';
-      fullPath: '/candidates/$candidateId/';
-      preLoaderRoute: typeof authenticatedCandidatesCandidateIdIndexRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/candidates/$candidateId/'
+      path: '/candidates/$candidateId'
+      fullPath: '/candidates/$candidateId/'
+      preLoaderRoute: typeof authenticatedCandidatesCandidateIdIndexRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/(authenticated)/candidates/$candidateId/edit': {
-      id: '/(authenticated)/candidates/$candidateId/edit';
-      path: '/candidates/$candidateId/edit';
-      fullPath: '/candidates/$candidateId/edit';
-      preLoaderRoute: typeof authenticatedCandidatesCandidateIdEditRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/candidates/$candidateId/edit'
+      path: '/candidates/$candidateId/edit'
+      fullPath: '/candidates/$candidateId/edit'
+      preLoaderRoute: typeof authenticatedCandidatesCandidateIdEditRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
     '/(authenticated)/schedule/locations/$locationId': {
-      id: '/(authenticated)/schedule/locations/$locationId';
-      path: '/schedule/locations/$locationId';
-      fullPath: '/schedule/locations/$locationId';
-      preLoaderRoute: typeof authenticatedScheduleLocationsLocationIdRouteImport;
-      parentRoute: typeof authenticatedRouteRoute;
-    };
+      id: '/(authenticated)/schedule/locations/$locationId'
+      path: '/schedule/locations/$locationId'
+      fullPath: '/schedule/locations/$locationId'
+      preLoaderRoute: typeof authenticatedScheduleLocationsLocationIdRouteImport
+      parentRoute: typeof authenticatedRouteRoute
+    }
   }
 }
 
 interface authenticatedAdminRouteRouteChildren {
-  authenticatedAdminHistoryRoute: typeof authenticatedAdminHistoryRoute;
-  authenticatedAdminSettingsRoute: typeof authenticatedAdminSettingsRoute;
-  authenticatedAdminStaffRoute: typeof authenticatedAdminStaffRoute;
-  authenticatedAdminIndexRoute: typeof authenticatedAdminIndexRoute;
-  authenticatedAdminTemplatesTemplateKeyRoute: typeof authenticatedAdminTemplatesTemplateKeyRoute;
-  authenticatedAdminTemplatesIndexRoute: typeof authenticatedAdminTemplatesIndexRoute;
+  authenticatedAdminHistoryRoute: typeof authenticatedAdminHistoryRoute
+  authenticatedAdminSettingsRoute: typeof authenticatedAdminSettingsRoute
+  authenticatedAdminStaffRoute: typeof authenticatedAdminStaffRoute
+  authenticatedAdminIndexRoute: typeof authenticatedAdminIndexRoute
+  authenticatedAdminTemplatesTemplateKeyRoute: typeof authenticatedAdminTemplatesTemplateKeyRoute
+  authenticatedAdminTemplatesIndexRoute: typeof authenticatedAdminTemplatesIndexRoute
 }
 
 const authenticatedAdminRouteRouteChildren: authenticatedAdminRouteRouteChildren =
@@ -403,21 +403,21 @@ const authenticatedAdminRouteRouteChildren: authenticatedAdminRouteRouteChildren
       authenticatedAdminTemplatesTemplateKeyRoute,
     authenticatedAdminTemplatesIndexRoute:
       authenticatedAdminTemplatesIndexRoute,
-  };
+  }
 
 const authenticatedAdminRouteRouteWithChildren =
   authenticatedAdminRouteRoute._addFileChildren(
-    authenticatedAdminRouteRouteChildren
-  );
+    authenticatedAdminRouteRouteChildren,
+  )
 
 interface authenticatedRouteRouteChildren {
-  authenticatedAdminRouteRoute: typeof authenticatedAdminRouteRouteWithChildren;
-  authenticatedIndexRoute: typeof authenticatedIndexRoute;
-  authenticatedCandidatesNewRoute: typeof authenticatedCandidatesNewRoute;
-  authenticatedScheduleIndexRoute: typeof authenticatedScheduleIndexRoute;
-  authenticatedCandidatesCandidateIdEditRoute: typeof authenticatedCandidatesCandidateIdEditRoute;
-  authenticatedScheduleLocationsLocationIdRoute: typeof authenticatedScheduleLocationsLocationIdRoute;
-  authenticatedCandidatesCandidateIdIndexRoute: typeof authenticatedCandidatesCandidateIdIndexRoute;
+  authenticatedAdminRouteRoute: typeof authenticatedAdminRouteRouteWithChildren
+  authenticatedIndexRoute: typeof authenticatedIndexRoute
+  authenticatedCandidatesNewRoute: typeof authenticatedCandidatesNewRoute
+  authenticatedScheduleIndexRoute: typeof authenticatedScheduleIndexRoute
+  authenticatedCandidatesCandidateIdEditRoute: typeof authenticatedCandidatesCandidateIdEditRoute
+  authenticatedScheduleLocationsLocationIdRoute: typeof authenticatedScheduleLocationsLocationIdRoute
+  authenticatedCandidatesCandidateIdIndexRoute: typeof authenticatedCandidatesCandidateIdIndexRoute
 }
 
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
@@ -431,10 +431,10 @@ const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
     authenticatedScheduleLocationsLocationIdRoute,
   authenticatedCandidatesCandidateIdIndexRoute:
     authenticatedCandidatesCandidateIdIndexRoute,
-};
+}
 
 const authenticatedRouteRouteWithChildren =
-  authenticatedRouteRoute._addFileChildren(authenticatedRouteRouteChildren);
+  authenticatedRouteRoute._addFileChildren(authenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   authenticatedRouteRoute: authenticatedRouteRouteWithChildren,
@@ -442,7 +442,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalLinkRoute: PortalLinkRoute,
   PortalIndexRoute: PortalIndexRoute,
   PortalMessagesMessageIdRoute: PortalMessagesMessageIdRoute,
-};
+}
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()

@@ -4,7 +4,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { fetchJson } from '../lib/api.ts';
-import type { MessagePreview } from './staff.ts';
+import type { MessagePreview, StaffRole } from './staff.ts';
 
 // Shapes of /api/admin (server.core/Admin). Admins only; everyone else gets a 403.
 
@@ -242,3 +242,58 @@ export const useRemoveHoliday = () =>
       method: 'DELETE',
     })
   );
+
+// The staff whitelist and schedule teams.
+
+export type StaffAdminView = {
+  assignedCandidates: number;
+  email: string;
+  id: number;
+  isActive: boolean;
+  isAdmin: boolean;
+  name: string;
+  phone: string | null;
+  role: StaffRole;
+  teamIds: number[];
+};
+
+export type TeamView = {
+  id: number;
+  key: string;
+  locations: string[];
+  name: string;
+};
+
+export type StaffInput = {
+  email: string;
+  isActive: boolean;
+  isAdmin: boolean;
+  name: string;
+  phone: string;
+  role: StaffRole;
+  teamIds: number[];
+};
+
+export const staffListQueryOptions = () =>
+  queryOptions({
+    queryFn: () =>
+      fetchJson<{ staff: StaffAdminView[]; teams: TeamView[] }>(
+        '/api/admin/staff'
+      ),
+    queryKey: ['admin', 'staff'] as const,
+  });
+
+export const useSaveStaff = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...input }: StaffInput & { id: number | null }) =>
+      fetchJson<{ member: StaffAdminView; notice: string | null }>(
+        id ? `/api/admin/staff/${id}` : '/api/admin/staff',
+        send(input, id ? 'PUT' : 'POST')
+      ),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: adminKeys.all });
+      await queryClient.invalidateQueries({ queryKey: ['staff', 'members'] });
+    },
+  });
+};

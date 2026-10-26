@@ -27,9 +27,13 @@ Try these flows:
    portal choose **Verify remotely**. 11B arrives, and a **Remote I-9 representative** card asks for a full name and
    email. As Casey Brooks, enter a representative; the ATI number card appears on Fingerprinting once the appointment
    has started. Both show on the candidate's page and in History.
-10. Visit `/login` and switch to Schedule User, a police-department team member: only the schedule, only the two police locations, and no links into candidate records.
-11. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
-12. Visit `/login` and sign out. `/api/user/me` returns `401`.
+10. As Sample User (an admin), open **Admin**. **Templates**: edit a message, **Preview the wording above** for a
+    candidate, and save it as the next version (a made-up `{{Field}}` is refused). **Settings**: change
+    `ClearanceBusinessDaysBeforeStart` or a step's deadline and see how many due dates moved; add a holiday. **Staff**:
+    add Schedule User to another team and their schedule shows it on the next page load. **History** lists each change.
+11. Visit `/login` and switch to Schedule User, a police-department team member: only the schedule, only the two police locations, and no links into candidate records.
+12. Visit `/login` and switch to Basic User. They are signed in but not on the staff whitelist, so the app shows **Access unavailable** and `/api/staff/*` returns `403`.
+13. Visit `/login` and sign out. `/api/user/me` returns `401`.
 
 Fixtures are seeded only into an empty database. After a schema or fixture change, reset with `down --volumes` (below).
 

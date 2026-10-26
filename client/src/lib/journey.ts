@@ -49,6 +49,7 @@ export const roleLabel: Record<StaffRole, string> = {
   OnboardingSpecialist: 'Onboarding specialist',
   Recruiter: 'Recruiter',
   RecruitingAssistant: 'Recruiting assistant',
+  TeamMember: 'Team member (schedule only)',
 };
 
 /** Who a message section, or a step, is for. */

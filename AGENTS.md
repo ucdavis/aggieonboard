@@ -87,6 +87,11 @@ reach parity with.
   `/api/portal/fingerprinting/ati`). Staff enter the same answers on the candidate form; both use the checks in
   `server.core/Journey/CandidateAnswers.cs`. A message's later wording is a `version: N` file next to version 1
   (`*.v2.md`); the latest version is what sends.
+- Admin: `server.core/Admin/` (`TemplateAdmin`, `SettingsAdmin`, `StaffAdmin`) and `server/Controllers/Admin/`
+  (`/api/admin/*`, role `Admin`). A template edit is always a new version, and the save checks are the gate for
+  invariant 6, so keep new merge fields in `MergeFields` (and `AppointmentOnly` when only appointment emails have them).
+  A change that moves deadlines must recompute open due dates and note each move in the candidate's history. Changes
+  to shared data are `AuditEvent`s with no candidate, shown on the History tab.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what
