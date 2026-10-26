@@ -7,6 +7,7 @@ import {
   formatShortDate,
   formatTime,
   phaseLabel,
+  roleLabel,
   statusBadge,
   statusLabel,
 } from '@/lib/journey.ts';
@@ -14,6 +15,14 @@ import { pipelineQueryOptions, type PipelineRow } from '@/queries/staff.ts';
 import { DataTable } from '@/shared/dataTable.tsx';
 
 type PipelineSearch = { mine?: boolean };
+
+/** The person in the group whose step is current: whose move it is. */
+const ownerOf = (row: PipelineRow) =>
+  row.currentStepOwner === 'Recruiter'
+    ? row.recruiter
+    : row.currentStepOwner === 'UnitHr'
+      ? row.unitHr
+      : row.serviceChannel;
 
 export const Route = createFileRoute('/(authenticated)/')({
   component: PipelinePage,
@@ -194,19 +203,14 @@ const pipelineColumns: ColumnDef<PipelineRow>[] = [
     id: 'start',
   },
   {
-    accessorFn: (row) =>
-      [row.onboardingSpecialist, row.recruitingAssistant]
-        .filter(Boolean)
-        .join(' '),
+    accessorFn: (row) => ownerOf(row) ?? '',
     cell: ({ row: { original } }) => (
       <div className="text-sm">
-        {original.onboardingSpecialist ?? original.recruitingAssistant ?? '—'}
+        {ownerOf(original) ?? '—'}
         <div className="text-xs text-base-content/60">
-          {original.onboardingSpecialist
-            ? 'Onboarding specialist'
-            : original.recruitingAssistant
-              ? 'Recruiting assistant'
-              : ''}
+          {original.currentStepOwner
+            ? roleLabel[original.currentStepOwner]
+            : ''}
         </div>
       </div>
     ),

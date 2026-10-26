@@ -153,6 +153,6 @@ public class SeedingTests
 
         var staff = await db.Staff.SingleAsync(s => s.Email == DevelopmentSeeder.SandboxStaffEmail);
         staff.IsAdmin.Should().BeTrue();
-        staff.Role.Should().Be(StaffRole.OnboardingSpecialist);
+        staff.Role.Should().Be(StaffRole.ServiceChannel);
     }
 }

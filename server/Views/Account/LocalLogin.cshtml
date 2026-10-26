@@ -1,46 +1,90 @@
-@model string
+@model Server.Controllers.LocalLoginModel
+@{
+    // What each sandbox sign-in is for. Keys match LocalAuthentication.All.
+    var staff = new (string Key, string Group, string What)[]
+    {
+        ("recruiter", "Recruiter", "Talent Acquisition: references, qualifications, offer and the employee data form (steps 1–4)."),
+        ("service", "Service Channel", "Pre-employment clearances through cleared to start (steps 5–14), then hands the new employee to Unit HR."),
+        ("unithr", "Unit HR", "The first day and New Employee Welcome (step 15)."),
+        ("sample", "Admin", "A Service Channel specialist who can also edit templates, settings and staff."),
+    };
+    var checks = new (string Key, string Group, string What)[]
+    {
+        ("scheduler", "Schedule team", "A police-department team member: sees only that team's schedule and roster."),
+        ("basic", "Not on the staff list", "A UC Davis account nobody added: should see \"Access unavailable\"."),
+    };
+    var people = Server.Helpers.LocalAuthentication.All.ToDictionary(p => p.Key);
+}
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Local sign-in | AggieOnboard</title>
+    <title>Sandbox sign-in | AggieOnboard</title>
     <style>
         body { margin: 0; background: #f2f5f8; color: #172b40; font-family: system-ui, sans-serif; }
-        main { max-width: 560px; margin: 10vh auto; padding: 32px; background: white; border-top: 6px solid #ffbf00; border-radius: 8px; }
-        h1 { color: #022851; }
+        main { max-width: 640px; margin: 6vh auto; padding: 32px; background: white; border-top: 6px solid #ffbf00; border-radius: 8px; }
+        h1 { color: #022851; margin-bottom: 4px; }
+        h2 { color: #022851; font-size: 18px; margin: 32px 0 0; }
         p { line-height: 1.6; }
-        button { display: block; width: 100%; padding: 16px; margin-top: 16px; text-align: left; border: 1px solid #b8c6d3; border-radius: 6px; background: white; color: #022851; font: inherit; cursor: pointer; }
+        .hint { margin: 4px 0 0; font-size: 14px; color: #4a5d70; }
+        button { display: block; width: 100%; padding: 14px 16px; margin-top: 10px; text-align: left; border: 1px solid #b8c6d3; border-radius: 6px; background: white; color: #022851; font: inherit; cursor: pointer; }
         button:hover { background: #eef4fa; }
         button:focus-visible, a:focus-visible { outline: 3px solid #13639e; outline-offset: 3px; }
-        button span { display: block; margin-top: 6px; font-size: 14px; }
+        button span { display: block; margin-top: 4px; font-size: 14px; color: #34495e; }
+        .group { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #e6eef6; font-size: 13px; font-weight: 600; color: #022851; }
         a { color: #00588a; }
     </style>
 </head>
 <body>
 <main>
-    <p>AggieOnboard · Docker sandbox</p>
-    <h1>Choose a local user</h1>
-    <p>These fictional accounts work without Entra or a password. Their access comes from the staff whitelist, as a real sign-in's would.</p>
+    <p class="hint">AggieOnboard · Docker sandbox · fictional people only</p>
+    <h1>Who do you want to test as?</h1>
+    <p class="hint">No password needed. Staff access comes from the staff list, as a real sign-in's would.</p>
+
     <form action="/login/local" method="post">
         @Html.AntiForgeryToken()
-        <input type="hidden" name="returnUrl" value="@Model" />
-        <button name="persona" value="sample" type="submit">
-            <strong>Sign in as Sample User</strong>
-            <span>sample@example.test · onboarding specialist and admin, on the SSO I-9 desk</span>
-        </button>
-        <button name="persona" value="scheduler" type="submit">
-            <strong>Sign in as Schedule User</strong>
-            <span>scheduler@example.test · police-department team member: the schedule only</span>
-        </button>
-        <button name="persona" value="basic" type="submit">
-            <strong>Sign in as Basic User</strong>
-            <span>basic@example.test · signed in but not staff: see access denied</span>
-        </button>
+        <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+        <h2>Staff, by group</h2>
+        @foreach (var s in staff)
+        {
+            <button name="persona" value="@s.Key" type="submit">
+                <strong>@people[s.Key].Name</strong><span class="group">@s.Group</span>
+                <span>@s.What</span>
+            </button>
+        }
+
+        <h2>Access checks</h2>
+        @foreach (var s in checks)
+        {
+            <button name="persona" value="@s.Key" type="submit">
+                <strong>@people[s.Key].Name</strong><span class="group">@s.Group</span>
+                <span>@s.What</span>
+            </button>
+        }
     </form>
+
+    <h2>New employee view</h2>
+    <p class="hint">Opens that person's onboarding checklist, as if they had followed the link in one of our emails. You can stay signed in as staff at the same time.</p>
+    <form action="/login/candidate" method="post">
+        @Html.AntiForgeryToken()
+        @foreach (var c in Model.Candidates)
+        {
+            <button name="candidateId" value="@c.Id" type="submit">
+                <strong>@c.Name</strong>
+                <span>@c.PositionTitle</span>
+            </button>
+        }
+        @if (Model.Candidates.Count == 0)
+        {
+            <p class="hint">No candidates yet. Add one as staff first.</p>
+        }
+    </form>
+
     @if (User.Identity?.IsAuthenticated == true)
     {
-        <p>Signed in as <strong>@User.Identity.Name</strong>. <a href="@Model">Continue to the app</a></p>
+        <p>Signed in as <strong>@User.Identity.Name</strong>. <a href="@Model.ReturnUrl">Continue to the app</a></p>
         <form action="/logout/local" method="post">
             @Html.AntiForgeryToken()
             <button type="submit">Sign out</button>

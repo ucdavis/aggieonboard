@@ -7,11 +7,11 @@ import { fetchJson } from '../lib/api.ts';
 
 // Shapes of /api/staff (server.core/Journey/JourneyModels.cs). Enums travel as their names.
 
+/** The groups that own steps (Recruiter 1–4, Service Channel 5–14, Unit HR 15), and schedule-only team members. */
 export type StaffRole =
-  | 'RecruitingAssistant'
   | 'Recruiter'
-  | 'OnboardingSpecialist'
-  | 'LearningAndDevelopment'
+  | 'ServiceChannel'
+  | 'UnitHr'
   /** Schedule only: no pipeline or candidate records. */
   | 'TeamMember';
 
@@ -39,6 +39,8 @@ export type PipelineRow = {
   applicableSteps: number;
   completedSteps: number;
   currentStepKey: string | null;
+  /** The group whose step is current: whose move it is. */
+  currentStepOwner: StaffRole | null;
   currentStepStatus: StepStatus | null;
   currentStepTitle: string | null;
   department: string;
@@ -47,12 +49,12 @@ export type PipelineRow = {
   name: string;
   nextDueDate: string | null;
   nextDueTime: string | null;
-  onboardingSpecialist: string | null;
   openSteps: number;
   phase: JourneyPhase | null;
   positionTitle: string;
   recruiter: string | null;
-  recruitingAssistant: string | null;
+  serviceChannel: string | null;
+  unitHr: string | null;
 };
 
 export type CandidateRequirements = {
@@ -121,15 +123,15 @@ export type CandidateDetail = {
   lastName: string;
   /** A side effect of the change just made, such as an automatic message. */
   notice?: string | null;
-  onboardingSpecialist: StaffSummary | null;
   portalLastSignInAt: string | null;
   positionTitle: string;
   qualifications: Qualification[];
   recruiter: StaffSummary | null;
-  recruitingAssistant: StaffSummary | null;
   requirements: CandidateRequirements;
   sentMessages: SentMessageSummary[];
+  serviceChannel: StaffSummary | null;
   steps: StepDetail[];
+  unitHr: StaffSummary | null;
 };
 
 export type MissingField = { description: string; fix: string; name: string };
@@ -181,12 +183,12 @@ export type CandidateInput = {
   i9RepresentativeEmail: string | null;
   i9RepresentativeName: string | null;
   lastName: string;
-  onboardingSpecialistId: number | null;
   positionTitle: string;
   qualifications: Qualification[];
   recruiterId: number | null;
-  recruitingAssistantId: number | null;
   requirements: CandidateRequirements;
+  serviceChannelId: number | null;
+  unitHrId: number | null;
 };
 
 export const staffKeys = {

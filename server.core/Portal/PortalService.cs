@@ -149,10 +149,9 @@ public sealed class PortalService(
     {
         var person = owner switch
         {
-            StaffRole.RecruitingAssistant => c.RecruitingAssistant,
-            StaffRole.Recruiter => c.Recruiter ?? c.RecruitingAssistant,
-            StaffRole.OnboardingSpecialist => c.OnboardingSpecialist,
-            _ => c.OnboardingSpecialist,
+            StaffRole.Recruiter => c.Recruiter,
+            StaffRole.UnitHr => c.UnitHr ?? c.ServiceChannel,
+            _ => c.ServiceChannel,
         };
         return person is { IsActive: true } ? new PortalContact(person.Name, person.ContactDetails) : null;
     }

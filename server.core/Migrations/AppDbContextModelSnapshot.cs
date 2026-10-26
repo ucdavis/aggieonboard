@@ -268,18 +268,12 @@ namespace server.core.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int?>("OnboardingSpecialistId")
-                        .HasColumnType("int");
-
                     b.Property<string>("PositionTitle")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<int?>("RecruiterId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("RecruitingAssistantId")
                         .HasColumnType("int");
 
                     b.Property<bool>("RequiresDmvPullNotice")
@@ -294,15 +288,21 @@ namespace server.core.Migrations
                     b.Property<bool>("RequiresPositionDescription")
                         .HasColumnType("bit");
 
+                    b.Property<int?>("ServiceChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UnitHrId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email");
 
-                    b.HasIndex("OnboardingSpecialistId");
-
                     b.HasIndex("RecruiterId");
 
-                    b.HasIndex("RecruitingAssistantId");
+                    b.HasIndex("ServiceChannelId");
+
+                    b.HasIndex("UnitHrId");
 
                     b.ToTable("Candidates");
                 });
@@ -991,26 +991,26 @@ namespace server.core.Migrations
 
             modelBuilder.Entity("Server.Core.Domain.Candidate", b =>
                 {
-                    b.HasOne("Server.Core.Domain.StaffMember", "OnboardingSpecialist")
-                        .WithMany()
-                        .HasForeignKey("OnboardingSpecialistId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Server.Core.Domain.StaffMember", "Recruiter")
                         .WithMany()
                         .HasForeignKey("RecruiterId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("Server.Core.Domain.StaffMember", "RecruitingAssistant")
+                    b.HasOne("Server.Core.Domain.StaffMember", "ServiceChannel")
                         .WithMany()
-                        .HasForeignKey("RecruitingAssistantId")
+                        .HasForeignKey("ServiceChannelId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("OnboardingSpecialist");
+                    b.HasOne("Server.Core.Domain.StaffMember", "UnitHr")
+                        .WithMany()
+                        .HasForeignKey("UnitHrId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Recruiter");
 
-                    b.Navigation("RecruitingAssistant");
+                    b.Navigation("ServiceChannel");
+
+                    b.Navigation("UnitHr");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.CandidateAccessToken", b =>

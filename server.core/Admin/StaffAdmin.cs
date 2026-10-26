@@ -149,9 +149,9 @@ public sealed partial class StaffAdmin(AppDbContext db, TimeProvider clock)
         var active = db.Candidates.Where(c => c.ArchivedAt == null);
         return member.Role switch
         {
-            StaffRole.RecruitingAssistant => await active.CountAsync(c => c.RecruitingAssistantId == member.Id, ct),
             StaffRole.Recruiter => await active.CountAsync(c => c.RecruiterId == member.Id, ct),
-            StaffRole.OnboardingSpecialist => await active.CountAsync(c => c.OnboardingSpecialistId == member.Id, ct),
+            StaffRole.ServiceChannel => await active.CountAsync(c => c.ServiceChannelId == member.Id, ct),
+            StaffRole.UnitHr => await active.CountAsync(c => c.UnitHrId == member.Id, ct),
             _ => 0,
         };
     }
@@ -159,9 +159,9 @@ public sealed partial class StaffAdmin(AppDbContext db, TimeProvider clock)
     private async Task<Dictionary<int, int>> AssignedCountsAsync(CancellationToken ct)
     {
         var rows = await db.Candidates.Where(c => c.ArchivedAt == null)
-            .Select(c => new { c.RecruitingAssistantId, c.RecruiterId, c.OnboardingSpecialistId })
+            .Select(c => new { c.RecruiterId, c.ServiceChannelId, c.UnitHrId })
             .ToListAsync(ct);
-        return rows.SelectMany(r => new[] { r.RecruitingAssistantId, r.RecruiterId, r.OnboardingSpecialistId })
+        return rows.SelectMany(r => new[] { r.RecruiterId, r.ServiceChannelId, r.UnitHrId })
             .OfType<int>()
             .GroupBy(id => id)
             .ToDictionary(g => g.Key, g => g.Count());
@@ -179,10 +179,9 @@ public sealed partial class StaffAdmin(AppDbContext db, TimeProvider clock)
 
     private static string Label(StaffRole role) => role switch
     {
-        StaffRole.RecruitingAssistant => "recruiting assistant",
         StaffRole.Recruiter => "recruiter",
-        StaffRole.OnboardingSpecialist => "onboarding specialist",
-        StaffRole.LearningAndDevelopment => "Learning and Development contact",
+        StaffRole.ServiceChannel => "Service Channel specialist",
+        StaffRole.UnitHr => "Unit HR contact",
         StaffRole.TeamMember => "team member",
         _ => role.ToString(),
     };

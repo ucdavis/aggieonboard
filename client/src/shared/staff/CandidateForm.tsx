@@ -25,7 +25,6 @@ type FormValues = {
   i9RepresentativeEmail: string;
   i9RepresentativeName: string;
   lastName: string;
-  onboardingSpecialistId: string;
   positionTitle: string;
   qualifications: {
     documentToSubmit: string;
@@ -33,8 +32,9 @@ type FormValues = {
     name: string;
   }[];
   recruiterId: string;
-  recruitingAssistantId: string;
   requirements: CandidateDetail['requirements'];
+  serviceChannelId: string;
+  unitHrId: string;
 };
 
 const required = (label: string) =>
@@ -55,7 +55,6 @@ const schema = z.object({
   ]),
   i9RepresentativeName: z.string(),
   lastName: required('Last name'),
-  onboardingSpecialistId: z.string(),
   positionTitle: required('Position title'),
   qualifications: z.array(
     z.object({
@@ -65,7 +64,6 @@ const schema = z.object({
     })
   ),
   recruiterId: z.string(),
-  recruitingAssistantId: z.string(),
   requirements: z.object({
     dmvPullNotice: z.boolean(),
     drugScreen: z.boolean(),
@@ -73,6 +71,8 @@ const schema = z.object({
     parking: z.boolean(),
     positionDescription: z.boolean(),
   }),
+  serviceChannelId: z.string(),
+  unitHrId: z.string(),
 }) satisfies z.ZodType<FormValues>;
 
 const requirementOptions: {
@@ -98,9 +98,6 @@ const toValues = (c?: CandidateDetail): FormValues => ({
   i9RepresentativeEmail: c?.i9RepresentativeEmail ?? '',
   i9RepresentativeName: c?.i9RepresentativeName ?? '',
   lastName: c?.lastName ?? '',
-  onboardingSpecialistId: c?.onboardingSpecialist
-    ? String(c.onboardingSpecialist.id)
-    : '',
   positionTitle: c?.positionTitle ?? '',
   qualifications:
     c?.qualifications.map((q) => ({
@@ -109,9 +106,6 @@ const toValues = (c?: CandidateDetail): FormValues => ({
       name: q.name,
     })) ?? [],
   recruiterId: c?.recruiter ? String(c.recruiter.id) : '',
-  recruitingAssistantId: c?.recruitingAssistant
-    ? String(c.recruitingAssistant.id)
-    : '',
   requirements: c?.requirements ?? {
     dmvPullNotice: false,
     drugScreen: false,
@@ -119,6 +113,8 @@ const toValues = (c?: CandidateDetail): FormValues => ({
     parking: false,
     positionDescription: false,
   },
+  serviceChannelId: c?.serviceChannel ? String(c.serviceChannel.id) : '',
+  unitHrId: c?.unitHr ? String(c.unitHr.id) : '',
 });
 
 const blank = (value: string) => (value.trim() ? value.trim() : null);
@@ -136,7 +132,6 @@ const toInput = (v: FormValues): CandidateInput => ({
   i9RepresentativeEmail: blank(v.i9RepresentativeEmail),
   i9RepresentativeName: blank(v.i9RepresentativeName),
   lastName: v.lastName.trim(),
-  onboardingSpecialistId: idOrNull(v.onboardingSpecialistId),
   positionTitle: v.positionTitle.trim(),
   qualifications: v.qualifications.map((q) => ({
     documentToSubmit: blank(q.documentToSubmit),
@@ -144,8 +139,9 @@ const toInput = (v: FormValues): CandidateInput => ({
     name: q.name.trim(),
   })),
   recruiterId: idOrNull(v.recruiterId),
-  recruitingAssistantId: idOrNull(v.recruitingAssistantId),
   requirements: v.requirements,
+  serviceChannelId: idOrNull(v.serviceChannelId),
+  unitHrId: idOrNull(v.unitHrId),
 });
 
 /**
@@ -253,15 +249,6 @@ export function CandidateForm({
 
         <fieldset className="grid gap-4 sm:grid-cols-3">
           <legend className="mb-2 text-lg font-semibold">Team</legend>
-          <form.AppField name="recruitingAssistantId">
-            {(f) => (
-              <f.SelectField
-                emptyLabel="Unassigned"
-                label="Recruiting assistant"
-                options={optionsFor('RecruitingAssistant')}
-              />
-            )}
-          </form.AppField>
           <form.AppField name="recruiterId">
             {(f) => (
               <f.SelectField
@@ -271,12 +258,21 @@ export function CandidateForm({
               />
             )}
           </form.AppField>
-          <form.AppField name="onboardingSpecialistId">
+          <form.AppField name="serviceChannelId">
             {(f) => (
               <f.SelectField
                 emptyLabel="Unassigned"
-                label="Onboarding specialist"
-                options={optionsFor('OnboardingSpecialist')}
+                label="Service Channel"
+                options={optionsFor('ServiceChannel')}
+              />
+            )}
+          </form.AppField>
+          <form.AppField name="unitHrId">
+            {(f) => (
+              <f.SelectField
+                emptyLabel="Unassigned"
+                label="Unit HR"
+                options={optionsFor('UnitHr')}
               />
             )}
           </form.AppField>

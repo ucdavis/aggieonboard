@@ -242,7 +242,7 @@ public class MessageServiceTests : IAsyncLifetime
     public async Task A_refused_delivery_records_nothing_and_starts_nothing()
     {
         var taylor = await Candidate("Taylor");
-        taylor.OnboardingSpecialistId = _me.Id;
+        taylor.ServiceChannelId = _me.Id;
         await _db.SaveChangesAsync();
         _email.Fail = true;
 

@@ -1,7 +1,7 @@
 namespace Server.Core.Domain;
 
 /// <summary>
-/// A recruiting assistant, recruiter, onboarding specialist or L&amp;D contact. Candidates are
+/// A member of a group that owns steps (Recruiter, Service Channel, Unit HR) or a schedule team. Candidates are
 /// assigned to them, and messages are signed by them. This table is also the sign-in whitelist: a
 /// UC Davis account whose email matches an active row gets staff roles; any other account gets none.
 /// </summary>

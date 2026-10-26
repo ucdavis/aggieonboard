@@ -15,12 +15,12 @@ The app health check at `/health` verifies SQL connectivity after migrations and
 
 Try these flows:
 
-1. Sign in as Sample User, a whitelisted onboarding specialist and admin. The pipeline lists eight fictional candidates; Taylor Nguyen is overdue. **My candidates** shows Morgan Chen and Riley Johnson.
+1. `/login` lists who you can test as. **Staff, by group**: Chris Alvarez (Recruiter, steps 1–4), Pat Kim (Service Channel, steps 5–14), Robin Hale (Unit HR, step 15) and Sample User (Service Channel and admin). **Access checks**: Schedule User (a police team: the schedule only) and Basic User (on no list: "Access unavailable"). **New employee view** opens any candidate's checklist directly, without an emailed link, and works while you are signed in as staff. As Sample User, the pipeline lists eight fictional candidates; Taylor Nguyen is overdue. **My candidates** shows Morgan Chen and Riley Johnson.
 2. Open a candidate. Start, complete, block or reopen steps; change a due date; add a staff note. Each change appears under History.
 3. Use **New candidate**, or **Edit details** on a candidate, and toggle a requirement such as Drug screen to watch its step appear or be skipped.
 4. On a step, choose **Preview message** to see its email filled in for that candidate, with anything missing and how to fix it. **Send** delivers it to the local inbox linked in the quick start and starts the step. Mailpit captures all recipients locally and has no relay configured.
 5. On Jordan Lee's Qualification verification, choose **Candidate done**: message 5 goes out automatically. Sent messages are listed under **Messages sent** and open exactly as they went out.
-6. In the local inbox, open any email and choose **View your onboarding checklist**, then **Continue**: that is the candidate portal, signed in as that candidate. The same link won't work twice. To get in again, use **Email a sign-in link** on the candidate's page, or **Email me a new link** at `/portal`.
+6. To see the candidate portal the way a candidate reaches it, open any email in the local inbox and choose **View your onboarding checklist**, then **Continue** (or use **New employee view** on `/login`). The same link won't work twice. To get in again, use **Email a sign-in link** on the candidate's page, or **Email me a new link** at `/portal`.
 7. Open **Schedule** for today's and tomorrow's rosters by location (Morgan Chen at Employee Health today, Casey Brooks at Health PD on the next business day), mark attendance, or open **Hours and sessions** to change a location's hours. On a candidate's page, **Appointments** books or changes on their behalf.
 8. As Casey Brooks in the portal (step 6), **Change time** on Fingerprinting and pick a Campus PD slot. The local inbox gets "Changed: Fingerprinting (Live Scan)" with an `invite.ics`, and the booking moves to Campus PD on Schedule User's roster. **Cancel appointment** sends a cancellation that removes the calendar event. Within 24 hours of an appointment the portal stops offering changes. Day-before reminders go out from 9 a.m. Pacific (`Scheduling` in `appsettings.json`).
 9. As Morgan Chen: on Morgan's page, send **I-9 verification**'s message (11A), open it from the local inbox, and in the
@@ -39,7 +39,7 @@ Fixtures are seeded only into an empty database. After a schema or fixture chang
 
 Pipeline, email, and candidate-portal flows are added here as their phases land (see [the plan](PLAN.md)).
 
-Sample User has ID `sandbox-sample`, email `sample@example.test`, IAM ID `sandbox-10001`, and roles `User` and `SampleRole`. Basic User has ID `sandbox-basic`, email `basic@example.test`, IAM ID `sandbox-10002`, and only `User`. They are fixed claims, not database user rows. Extend `LocalAuthentication.cs` when adding application roles, and `DbInitializer.cs` when adding fixtures.
+The sign-ins are fixed claims in `LocalAuthentication.All` (key, ID, name, IAM ID, email), not database user rows; each one's AggieOnboard roles come from the staff row with the same email. Sample User is `sample@example.test` with the template roles `User` and `SampleRole`; Basic User is `basic@example.test`, on no staff list. **New employee view** (`POST /login/candidate`) issues the same candidate cookie an emailed link would, and like local sign-in it exists only when `Auth:UseLocal` is on in Development. Extend `LocalAuthentication.cs` when adding application roles, and `DbInitializer.cs` when adding fixtures.
 
 ## Stop, rebuild, and reset
 

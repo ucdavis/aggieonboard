@@ -40,7 +40,7 @@ public class AuthenticationHelperTests : IDisposable
         _scope = _provider.CreateScope();
 
         // The test principal's email is on the whitelist; roles come from this row.
-        Db.Staff.Add(new StaffMember { Name = "Sample User", Email = "sample@example.test", Role = StaffRole.OnboardingSpecialist });
+        Db.Staff.Add(new StaffMember { Name = "Sample User", Email = "sample@example.test", Role = StaffRole.ServiceChannel });
         Db.SaveChanges();
     }
 
@@ -80,7 +80,7 @@ public class AuthenticationHelperTests : IDisposable
         var signedIn = await ValidateToken(CreatePrincipal());
 
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist", "Scheduling", "Admin");
+            .Should().BeEquivalentTo("Staff", "ServiceChannel", "Scheduling", "Admin");
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class AuthenticationHelperTests : IDisposable
         var cookie = await ValidateCookie(signedIn);
 
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist");
+            .Should().BeEquivalentTo("Staff", "ServiceChannel");
         signedIn.Identity!.Name.Should().Be("Sample User");
         cookie.Principal.Should().BeSameAs(signedIn);
         cookie.ShouldRenew.Should().BeFalse();
@@ -141,7 +141,7 @@ public class AuthenticationHelperTests : IDisposable
         var cookie = await ValidateCookie(principal);
 
         cookie.Principal!.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist");
+            .Should().BeEquivalentTo("Staff", "ServiceChannel");
         cookie.Principal.Identity!.Name.Should().Be("Sample User");
         cookie.Principal.FindFirst("ucdPersonIAMID")!.Value.Should().Be("sandbox-10001");
         cookie.ShouldRenew.Should().BeTrue();
@@ -192,7 +192,7 @@ public class AuthenticationHelperTests : IDisposable
         updatedSecondary.FindFirst("department")!.Value.Should().Be("Example department");
         updatedSecondary.FindAll(ClaimTypes.Role).Should().BeEmpty();
         signedIn.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
-            .Should().BeEquivalentTo("Staff", "OnboardingSpecialist");
+            .Should().BeEquivalentTo("Staff", "ServiceChannel");
         principal.FindAll(ClaimTypes.Role).Select(claim => claim.Value)
             .Should().Equal("DirectoryRole", "OldRole");
     }
@@ -206,7 +206,7 @@ public class AuthenticationHelperTests : IDisposable
     {
         var primary = new ClaimsIdentity(CreatePrincipal().Claims, "OpenIdConnect", "name", primaryRoleClaimType);
         primary.AddClaim(new Claim(primaryRoleClaimType, "Staff"));
-        primary.AddClaim(new Claim(primaryRoleClaimType, "OnboardingSpecialist"));
+        primary.AddClaim(new Claim(primaryRoleClaimType, "ServiceChannel"));
         var secondary = new ClaimsIdentity(
             [new Claim("secondary-role", "StaleRole"), new Claim("department", "Example department")],
             "AdditionalIdentity", "name", "secondary-role");
@@ -227,7 +227,7 @@ public class AuthenticationHelperTests : IDisposable
 
         updated.IsInRole("StaleRole").Should().BeFalse();
         updated.IsInRole("Staff").Should().BeTrue();
-        updated.IsInRole("OnboardingSpecialist").Should().BeTrue();
+        updated.IsInRole("ServiceChannel").Should().BeTrue();
         updated.Identities.First().RoleClaimType.Should().Be(primaryRoleClaimType);
         updated.Identities.Last().RoleClaimType.Should().Be("secondary-role");
         updated.FindFirst("department")!.Value.Should().Be("Example department");

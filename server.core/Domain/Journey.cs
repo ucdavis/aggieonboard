@@ -69,13 +69,17 @@ public enum JourneyPhase
     FirstDay,
 }
 
-/// <summary>Who owns a step or sends a message. Matches the senders named in the audit.</summary>
+/// <summary>
+/// The groups that own the journey's steps (decided 2026-10-26). Recruiters (Talent Acquisition, with the
+/// recruiting assistants) own steps 1–4; Service Channel owns pre-employment through "cleared to start"
+/// (5–14) and hands the new employee back to Unit HR, which owns the first day and New Employee
+/// Welcome (15, with L&amp;D).
+/// </summary>
 public enum StaffRole
 {
-    RecruitingAssistant,
     Recruiter,
-    OnboardingSpecialist,
-    LearningAndDevelopment,
+    ServiceChannel,
+    UnitHr,
 
     /// <summary>
     /// Runs appointments only (a police department, Employee Health): signs in to the schedule,

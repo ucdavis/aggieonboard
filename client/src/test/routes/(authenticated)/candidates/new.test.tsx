@@ -13,13 +13,13 @@ const staffMembers = () =>
         email: 'dana.ortiz@example.test',
         id: 1,
         name: 'Dana Ortiz',
-        role: 'RecruitingAssistant',
+        role: 'Recruiter',
       },
       {
         email: 'pat.kim@example.test',
         id: 3,
         name: 'Pat Kim',
-        role: 'OnboardingSpecialist',
+        role: 'ServiceChannel',
       },
     ])
   );
@@ -93,7 +93,7 @@ describe('new candidate route', () => {
       const user = await fillRequired();
       await user.click(screen.getByLabelText('Drug screen'));
       await user.selectOptions(
-        await screen.findByLabelText('Recruiting assistant'),
+        await screen.findByLabelText('Recruiter'),
         'Dana Ortiz'
       );
       await user.click(
@@ -106,9 +106,9 @@ describe('new candidate route', () => {
       expect(body).toMatchObject({
         anticipatedStartDate: null,
         firstName: 'Jesse',
-        onboardingSpecialistId: null,
-        recruitingAssistantId: 1,
+        recruiterId: 1,
         requirements: { drugScreen: true, parking: false },
+        serviceChannelId: null,
       });
     } finally {
       cleanup();
@@ -176,7 +176,7 @@ describe('new candidate route', () => {
         HttpResponse.json(
           {
             errors: {
-              recruitingAssistantId: ['Pat Kim is not a recruiting assistant.'],
+              recruiterId: ['Pat Kim is not a recruiter.'],
             },
             status: 400,
             title: 'One or more validation errors occurred.',
@@ -195,9 +195,9 @@ describe('new candidate route', () => {
       );
 
       expect(
-        await screen.findByText('Pat Kim is not a recruiting assistant.')
+        await screen.findByText('Pat Kim is not a recruiter.')
       ).toBeInTheDocument();
-      expect(screen.getByLabelText('Recruiting assistant')).toHaveAttribute(
+      expect(screen.getByLabelText('Recruiter')).toHaveAttribute(
         'aria-invalid',
         'true'
       );

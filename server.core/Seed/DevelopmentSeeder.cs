@@ -26,9 +26,9 @@ public static class DevelopmentSeeder
     };
 
     /// <summary>
-    /// The sandbox's "Sample User" sign-in (server/Helpers/LocalAuthentication.cs), whitelisted as
-    /// an onboarding specialist and admin. "Basic User" is left off on purpose: it shows the
-    /// signed-in-but-not-staff screen.
+    /// The sandbox's "Sample User" sign-in (server/Helpers/LocalAuthentication.cs): a Service Channel
+    /// specialist and admin. The group sign-ins (recruiter, Service Channel, Unit HR) are the fixture
+    /// staff below; "Basic User" is left off on purpose, to show the signed-in-but-not-staff screen.
     /// </summary>
     public const string SandboxStaffEmail = "sample@example.test";
 
@@ -45,7 +45,7 @@ public static class DevelopmentSeeder
             {
                 Name = "Sample User",
                 Email = SandboxStaffEmail,
-                Role = StaffRole.OnboardingSpecialist,
+                Role = StaffRole.ServiceChannel,
                 IsAdmin = true,
             };
             db.Staff.Add(sandboxStaff);
@@ -72,12 +72,13 @@ public static class DevelopmentSeeder
         // A start date that is a business day, at least `weeks` out (or back, when negative).
         DateOnly StartIn(int weeks) => calendar.AddBusinessDays(today.AddDays(7 * weeks - 1), 1);
 
-        var ra = Staff("Dana Ortiz", StaffRole.RecruitingAssistant);
+        // Recruiter (Talent Acquisition), Service Channel and Unit HR: the groups that own the steps.
         var recruiter = Staff("Chris Alvarez", StaffRole.Recruiter);
-        var specialist = Staff("Pat Kim", StaffRole.OnboardingSpecialist, "916-555-0142");
-        var specialist2 = Staff("Jamie Fox", StaffRole.OnboardingSpecialist);
-        var learning = Staff("Robin Hale", StaffRole.LearningAndDevelopment);
-        db.Staff.AddRange(ra, recruiter, specialist, specialist2, learning);
+        var recruiter2 = Staff("Dana Ortiz", StaffRole.Recruiter);
+        var specialist = Staff("Pat Kim", StaffRole.ServiceChannel, "916-555-0142");
+        var specialist2 = Staff("Jamie Fox", StaffRole.ServiceChannel);
+        var learning = Staff("Robin Hale", StaffRole.UnitHr);
+        db.Staff.AddRange(recruiter, recruiter2, specialist, specialist2, learning);
 
         Candidate New(string first, string last, string position, string department, StaffMember? onboarding = null)
         {
@@ -88,9 +89,9 @@ public static class DevelopmentSeeder
                 Email = $"{first}.{last}@example.test".ToLowerInvariant(),
                 PositionTitle = position,
                 Department = department,
-                RecruitingAssistant = ra,
                 Recruiter = recruiter,
-                OnboardingSpecialist = onboarding,
+                ServiceChannel = onboarding,
+                UnitHr = learning,
                 CreatedAt = now.AddDays(-30),
             };
             db.Candidates.Add(candidate);
@@ -185,7 +186,7 @@ public static class DevelopmentSeeder
         JourneyBuilder Path(Candidate candidate)
         {
             CandidateJourney.AddSteps(candidate, definitions);
-            return new JourneyBuilder(candidate, now, deadlines, candidate.RecruitingAssistant);
+            return new JourneyBuilder(candidate, now, deadlines, candidate.Recruiter);
         }
     }
 

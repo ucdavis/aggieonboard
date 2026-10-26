@@ -13,7 +13,7 @@ export const staffUser = {
   iamId: null,
   id: 'sandbox-sample',
   name: 'Sample User',
-  roles: ['Staff', 'OnboardingSpecialist'],
+  roles: ['Staff', 'ServiceChannel'],
 };
 
 export const meAsStaff = () =>
@@ -34,6 +34,7 @@ export const pipelineRow = (
   applicableSteps: 8,
   completedSteps: 1,
   currentStepKey: 'offer',
+  currentStepOwner: 'Recruiter',
   currentStepStatus: 'ActionNeeded',
   currentStepTitle: 'Offer',
   department: 'Department of Surgery',
@@ -42,12 +43,12 @@ export const pipelineRow = (
   name: 'Sam Patel',
   nextDueDate: null,
   nextDueTime: null,
-  onboardingSpecialist: null,
   openSteps: 1,
   phase: 'TalentAcquisition',
   positionTitle: 'Administrative Assistant II',
   recruiter: 'Chris Alvarez',
-  recruitingAssistant: 'Dana Ortiz',
+  serviceChannel: null,
+  unitHr: null,
   ...overrides,
 });
 
@@ -68,7 +69,7 @@ export const step = (overrides: Partial<StepDetail> = {}): StepDetail => ({
   isOverdue: false,
   key: 'references',
   order: 1,
-  owner: 'RecruitingAssistant',
+  owner: 'Recruiter',
   phase: 'TalentAcquisition',
   requestMessageKey: 'references-request',
   staffNote: null,
@@ -97,12 +98,10 @@ export const candidate = (
   i9RepresentativeName: null,
   id: 1,
   lastName: 'Rivera',
-  onboardingSpecialist: null,
   portalLastSignInAt: null,
   positionTitle: 'Clinical Nurse II',
   qualifications: [],
   recruiter: null,
-  recruitingAssistant: null,
   requirements: {
     dmvPullNotice: false,
     drugScreen: false,
@@ -111,6 +110,7 @@ export const candidate = (
     positionDescription: false,
   },
   sentMessages: [],
+  serviceChannel: null,
   steps: [
     step(),
     step({
@@ -119,7 +119,7 @@ export const candidate = (
       condition: 'DrugScreen',
       key: 'drug-screen',
       order: 7,
-      owner: 'OnboardingSpecialist',
+      owner: 'ServiceChannel',
       phase: 'PreEmployment',
       requestMessageKey: null,
       status: 'Skipped',
@@ -128,6 +128,7 @@ export const candidate = (
       watchForSender: 'Quest Diagnostics',
     }),
   ],
+  unitHr: null,
   ...overrides,
 });
 

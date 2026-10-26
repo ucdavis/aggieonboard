@@ -14,9 +14,9 @@ public static class JourneyData
             .Include(c => c.Steps).ThenInclude(s => s.Step)
             .Include(c => c.Steps).ThenInclude(s => s.CompletedBy)
             .Include(c => c.Qualifications)
-            .Include(c => c.RecruitingAssistant)
             .Include(c => c.Recruiter)
-            .Include(c => c.OnboardingSpecialist)
+            .Include(c => c.ServiceChannel)
+            .Include(c => c.UnitHr)
             .AsSplitQuery();
 
     /// <summary>The deadline rules as they stand: holidays and the clearance setting are read fresh each time.</summary>

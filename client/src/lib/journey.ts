@@ -45,11 +45,10 @@ export const phaseLabel: Record<JourneyPhase, string> = {
 };
 
 export const roleLabel: Record<StaffRole, string> = {
-  LearningAndDevelopment: 'Learning and Development',
-  OnboardingSpecialist: 'Onboarding specialist',
   Recruiter: 'Recruiter',
-  RecruitingAssistant: 'Recruiting assistant',
+  ServiceChannel: 'Service Channel',
   TeamMember: 'Team member (schedule only)',
+  UnitHr: 'Unit HR',
 };
 
 /** Who a message section, or a step, is for. */

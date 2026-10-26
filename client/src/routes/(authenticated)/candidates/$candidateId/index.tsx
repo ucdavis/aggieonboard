@@ -160,12 +160,12 @@ function CandidatePage() {
             <div className="card-body gap-3 text-sm">
               <h2 className="card-title text-base">Team</h2>
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-                <dt className="text-base-content/60">Recruiting assistant</dt>
-                <dd>{candidate.recruitingAssistant?.name ?? '—'}</dd>
                 <dt className="text-base-content/60">Recruiter</dt>
                 <dd>{candidate.recruiter?.name ?? '—'}</dd>
-                <dt className="text-base-content/60">Onboarding specialist</dt>
-                <dd>{candidate.onboardingSpecialist?.name ?? '—'}</dd>
+                <dt className="text-base-content/60">Service Channel</dt>
+                <dd>{candidate.serviceChannel?.name ?? '—'}</dd>
+                <dt className="text-base-content/60">Unit HR</dt>
+                <dd>{candidate.unitHr?.name ?? '—'}</dd>
               </dl>
             </div>
           </section>

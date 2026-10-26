@@ -18,20 +18,28 @@ public static class LocalAuthentication
     }
 
     /// <summary>
-    /// The sandbox's fictional sign-ins. Their AggieOnboard roles come from the staff whitelist like
-    /// any sign-in (DevelopmentSeeder): Sample User is an onboarding specialist and admin, Schedule
-    /// User a police-department team member who sees only the schedule, and Basic User is not staff.
+    /// The sandbox's fictional sign-ins, one per kind of user. Their AggieOnboard roles come from the
+    /// staff whitelist like any sign-in (DevelopmentSeeder): Chris Alvarez is a recruiter, Pat Kim a
+    /// Service Channel specialist, Robin Hale Unit HR, Sample User a Service Channel admin, Schedule User
+    /// a police-department team member (the schedule only), and Basic User is on no list at all.
+    /// The order here is the order on the sign-in page.
     /// </summary>
-    private static readonly Dictionary<string, (string Id, string Name, string IamId)> Personas = new()
-    {
-        ["sample"] = ("sandbox-sample", "Sample User", "sandbox-10001"),
-        ["basic"] = ("sandbox-basic", "Basic User", "sandbox-10002"),
-        ["scheduler"] = ("sandbox-scheduler", "Schedule User", "sandbox-10003"),
-    };
+    public static readonly IReadOnlyList<SandboxPersona> All =
+    [
+        new("recruiter", "sandbox-recruiter", "Chris Alvarez", "sandbox-10004", "chris.alvarez@example.test"),
+        new("service", "sandbox-service", "Pat Kim", "sandbox-10005", "pat.kim@example.test"),
+        new("unithr", "sandbox-unithr", "Robin Hale", "sandbox-10006", "robin.hale@example.test"),
+        new("sample", "sandbox-sample", "Sample User", "sandbox-10001", "sample@example.test"),
+        new("scheduler", "sandbox-scheduler", "Schedule User", "sandbox-10003", "scheduler@example.test"),
+        new("basic", "sandbox-basic", "Basic User", "sandbox-10002", "basic@example.test"),
+    ];
+
+    public sealed record SandboxPersona(string Key, string Id, string Name, string IamId, string Email);
 
     public static ClaimsPrincipal? CreatePrincipal(string? persona)
     {
-        if (persona is null || !Personas.TryGetValue(persona, out var p))
+        var p = All.FirstOrDefault(x => x.Key == persona);
+        if (p is null)
         {
             return null;
         }
@@ -41,7 +49,7 @@ public static class LocalAuthentication
             new(ClaimTypes.NameIdentifier, p.Id),
             new(ClaimTypes.Name, p.Name),
             new("name", p.Name),
-            new("preferred_username", $"{persona}@example.test"),
+            new("preferred_username", p.Email),
             new("ucdPersonIAMID", p.IamId),
             new(ClaimTypes.Role, "User"),
         };

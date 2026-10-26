@@ -109,9 +109,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.FingerprintAtiNumber).HasMaxLength(Server.Core.Journey.CandidateAnswers.AtiNumberMax);
 
             // Staff are never deleted out from under a candidate; deactivate them instead.
-            e.HasOne(x => x.RecruitingAssistant).WithMany().HasForeignKey(x => x.RecruitingAssistantId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Recruiter).WithMany().HasForeignKey(x => x.RecruiterId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.OnboardingSpecialist).WithMany().HasForeignKey(x => x.OnboardingSpecialistId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ServiceChannel).WithMany().HasForeignKey(x => x.ServiceChannelId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.UnitHr).WithMany().HasForeignKey(x => x.UnitHrId).OnDelete(DeleteBehavior.Restrict);
 
             e.HasMany(x => x.Qualifications).WithOne().HasForeignKey(q => q.CandidateId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.Steps).WithOne(s => s.Candidate).HasForeignKey(s => s.CandidateId).OnDelete(DeleteBehavior.Cascade);

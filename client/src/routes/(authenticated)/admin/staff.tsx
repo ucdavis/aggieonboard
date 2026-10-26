@@ -160,9 +160,7 @@ function StaffDialog({
   const [name, setName] = useState(member?.name ?? '');
   const [email, setEmail] = useState(member?.email ?? '');
   const [phone, setPhone] = useState(member?.phone ?? '');
-  const [role, setRole] = useState<StaffRole>(
-    member?.role ?? 'OnboardingSpecialist'
-  );
+  const [role, setRole] = useState<StaffRole>(member?.role ?? 'ServiceChannel');
   const [isAdmin, setIsAdmin] = useState(member?.isAdmin ?? false);
   const [isActive, setIsActive] = useState(member?.isActive ?? true);
   const [teamIds, setTeamIds] = useState<number[]>(member?.teamIds ?? []);

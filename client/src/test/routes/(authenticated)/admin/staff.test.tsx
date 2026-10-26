@@ -15,7 +15,7 @@ const sample: StaffAdminView = {
   isAdmin: true,
   name: 'Sample User',
   phone: null,
-  role: 'OnboardingSpecialist',
+  role: 'ServiceChannel',
   teamIds: [1],
 };
 
@@ -116,7 +116,7 @@ describe('admin staff', () => {
         HttpResponse.json(
           {
             detail:
-              "Pat Kim is the onboarding specialist for 1 candidate. Reassign them on each candidate's page first.",
+              "Pat Kim is the Service Channel specialist for 1 candidate. Reassign them on each candidate's page first.",
             status: 409,
           },
           { status: 409 }
@@ -150,7 +150,7 @@ describe('admin staff', () => {
 
       expect(
         await within(dialog).findByText(
-          "Pat Kim is the onboarding specialist for 1 candidate. Reassign them on each candidate's page first."
+          "Pat Kim is the Service Channel specialist for 1 candidate. Reassign them on each candidate's page first."
         )
       ).toBeInTheDocument();
     } finally {

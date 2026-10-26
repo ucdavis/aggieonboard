@@ -80,6 +80,8 @@ public class LocalAuthenticationTests
         basic.IsInRole("User").Should().BeTrue();
         basic.IsInRole("SampleRole").Should().BeFalse();
         LocalAuthentication.CreatePrincipal("scheduler")!.FindFirst("preferred_username")!.Value.Should().Be("scheduler@example.test");
+        LocalAuthentication.CreatePrincipal("recruiter")!.FindFirst("preferred_username")!.Value
+            .Should().Be("chris.alvarez@example.test", "a group persona signs in as a fictional staff member on the whitelist");
     }
 
     [Theory]
@@ -95,21 +97,21 @@ public class LocalAuthenticationTests
     [InlineData("https://example.com/")]
     [InlineData("//example.com/")]
     [InlineData("/\\example.com/")]
-    public void Login_does_not_redirect_to_an_external_site(string returnUrl)
+    public async Task Login_does_not_redirect_to_an_external_site(string returnUrl)
     {
         var controller = Controller(local: "true");
 
-        var view = controller.Login(returnUrl).Should().BeOfType<ViewResult>().Subject;
+        var view = (await controller.Login(returnUrl)).Should().BeOfType<ViewResult>().Subject;
 
-        view.Model.Should().Be("/");
+        view.Model.Should().BeOfType<LocalLoginModel>().Which.ReturnUrl.Should().Be("/");
     }
 
     [Fact]
-    public void Normal_login_challenges_Entra_with_the_local_return_url()
+    public async Task Normal_login_challenges_Entra_with_the_local_return_url()
     {
         var controller = Controller();
 
-        var challenge = controller.Login("/fetch?example=1").Should().BeOfType<ChallengeResult>().Subject;
+        var challenge = (await controller.Login("/fetch?example=1")).Should().BeOfType<ChallengeResult>().Subject;
 
         challenge.AuthenticationSchemes.Should().ContainSingle().Which.Should().Be(OpenIdConnectDefaults.AuthenticationScheme);
         challenge.Properties!.RedirectUri.Should().Be("/fetch?example=1");
@@ -121,12 +123,13 @@ public class LocalAuthenticationTests
         var controller = Controller();
 
         (await controller.LocalLogin("sample", "/")).Should().BeOfType<NotFoundResult>();
+        (await controller.CandidateLogin(1)).Should().BeOfType<NotFoundResult>("the candidate view is a sandbox-only shortcut");
         (await controller.LocalLogout()).Should().BeOfType<NotFoundResult>();
     }
 
     private static AccountController Controller(string? local = null)
     {
-        var controller = new AccountController(Configuration(local), new TestEnvironment("Development"))
+        var controller = new AccountController(Configuration(local), new TestEnvironment("Development"), TestDbContextFactory.CreateInMemory())
         {
             ControllerContext = new ControllerContext
             {

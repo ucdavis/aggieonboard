@@ -72,9 +72,11 @@ public static class MergeFieldResolver
             ["HiringManagerContact"] = Text(c.HiringManagerContact, "Add the hiring manager contact under Edit details."),
 
             ["SenderName"] = Text(context.Sender.Name, "Your staff record has no name."),
-            ["RecruitingAssistantContact"] = Text(c.RecruitingAssistant?.ContactDetails, "Assign a recruiting assistant under Edit details."),
-            ["OnboardingSpecialistName"] = Text(c.OnboardingSpecialist?.Name, "Assign an onboarding specialist under Edit details."),
-            ["OnboardingSpecialistContact"] = Text(c.OnboardingSpecialist?.ContactDetails, "Assign an onboarding specialist under Edit details."),
+            // The copy names the audit's roles; recruiting assistants are now in the Recruiter group and
+            // onboarding specialists in Service Channel (StaffRole).
+            ["RecruitingAssistantContact"] = Text(c.Recruiter?.ContactDetails, "Assign a recruiter under Edit details."),
+            ["OnboardingSpecialistName"] = Text(c.ServiceChannel?.Name, "Assign a Service Channel specialist under Edit details."),
+            ["OnboardingSpecialistContact"] = Text(c.ServiceChannel?.ContactDetails, "Assign a Service Channel specialist under Edit details."),
 
             ["ReferenceSurveyDeadline"] = ReferenceSurveyDeadline(context),
             ["QualificationsDeadline"] = StepDue("qualifications", "Qualification verification"),

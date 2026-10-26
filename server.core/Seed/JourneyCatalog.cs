@@ -16,7 +16,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "references", Order = 1, AuditReference = "1–3", Title = "Reference check",
-            Phase = JourneyPhase.TalentAcquisition, Owner = StaffRole.RecruitingAssistant,
+            Phase = JourneyPhase.TalentAcquisition, Owner = StaffRole.Recruiter,
             RequestMessageKey = "references-request", VendorMessageKey = "skillsurvey-request",
             WatchForSender = "SkillSurvey",
             Deadline = DeadlineRule.AfterActivation(2, DeadlineUnit.BusinessDays),
@@ -26,7 +26,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "qualifications", Order = 2, AuditReference = "4–5", Title = "Qualification verification",
-            Phase = JourneyPhase.TalentAcquisition, Owner = StaffRole.RecruitingAssistant,
+            Phase = JourneyPhase.TalentAcquisition, Owner = StaffRole.Recruiter,
             Condition = CandidateCondition.HasQualifications,
             RequestMessageKey = "qualifications-request", AcknowledgmentMessageKey = "qualifications-received",
             DeadlineQuestion = "TA: what is the approved submission process, and is there a standard deadline? (audit #4)",
@@ -49,7 +49,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "background-check", Order = 5, AuditReference = "8", Title = "Background check",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             VendorMessageKey = "universal-request", WatchForSender = "Universal Background Screening",
             Deadline = DeadlineRule.AfterActivation(48, DeadlineUnit.Hours),
             DeadlineQuestion = "SSO: confirm the 48-hour submission deadline and when that period begins (audit #8).",
@@ -57,7 +57,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "employee-health", Order = 6, AuditReference = "9", Title = "Welcome and Employee Health screening",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             RequestMessageKey = "sso-welcome",
             Deadline = DeadlineRule.Clearance,
             DeadlineQuestion = "SSO: confirm the clearance deadline is six business days before the start date, and how "
@@ -66,7 +66,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "drug-screen", Order = 7, AuditReference = "10", Title = "Drug screen",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             Condition = CandidateCondition.DrugScreen,
             VendorMessageKey = "quest-request", WatchForSender = "Quest Diagnostics",
             // Message 9 gives Quest's current from address and subject.
@@ -78,7 +78,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "i9", Order = 8, AuditReference = "11A", Title = "I-9 verification",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             RequestMessageKey = "i9-choice", WatchForSender = "I-9 Tracker Complete",
             Deadline = DeadlineRule.Clearance,
             DeadlineQuestion = "SSO: confirm when this message is sent and how it connects to Employee Health scheduling; "
@@ -87,7 +87,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "i9-remote", Order = 9, AuditReference = "11B", Title = "Remote I-9 representative",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             Condition = CandidateCondition.RemoteI9,
             RequestMessageKey = "i9-remote", WatchForSender = "I-9 Tracker Complete",
             Deadline = DeadlineRule.Clearance,
@@ -97,7 +97,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "dmv", Order = 10, AuditReference = "12", Title = "DMV Employer Pull Notice",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             Condition = CandidateCondition.DmvPullNotice,
             RequestMessageKey = "additional-requirements", WatchForSender = "DocuSign",
             DeadlineConfirmed = true,
@@ -105,7 +105,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "fingerprinting", Order = 11, AuditReference = "12", Title = "Fingerprinting (Live Scan)",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             Condition = CandidateCondition.Fingerprinting,
             RequestMessageKey = "additional-requirements",
             Deadline = DeadlineRule.Clearance,
@@ -115,7 +115,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "position-description", Order = 12, AuditReference = "12", Title = "Position description",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             Condition = CandidateCondition.PositionDescription,
             RequestMessageKey = "additional-requirements", WatchForSender = "DocuSign",
             DeadlineConfirmed = true,
@@ -123,7 +123,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "parking", Order = 13, AuditReference = "12", Title = "Complimentary parking",
-            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.PreEmployment, Owner = StaffRole.ServiceChannel,
             Condition = CandidateCondition.Parking,
             RequestMessageKey = "additional-requirements",
             DeadlineConfirmed = true,
@@ -131,7 +131,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "cleared", Order = 14, AuditReference = "13", Title = "Cleared to start",
-            Phase = JourneyPhase.FirstDay, Owner = StaffRole.OnboardingSpecialist,
+            Phase = JourneyPhase.FirstDay, Owner = StaffRole.ServiceChannel,
             RequestMessageKey = "cleared", WatchForSender = "DocuSign",
             // Message 13: "Complete before your first day".
             Deadline = DeadlineRule.BeforeStart(1, DeadlineUnit.CalendarDays),
@@ -141,7 +141,7 @@ public static class JourneyCatalog
         new()
         {
             Key = "new-employee-welcome", Order = 15, AuditReference = "14", Title = "New Employee Welcome",
-            Phase = JourneyPhase.FirstDay, Owner = StaffRole.LearningAndDevelopment,
+            Phase = JourneyPhase.FirstDay, Owner = StaffRole.UnitHr,
             WatchForSender = "Learning and Development",
             // Message 13: "attendance is required within your first 30 days of employment".
             Deadline = DeadlineRule.AfterStart(30, DeadlineUnit.CalendarDays),

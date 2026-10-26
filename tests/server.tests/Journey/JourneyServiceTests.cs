@@ -37,7 +37,7 @@ public class JourneyServiceTests : IAsyncLifetime
         return new CandidateInput(
             detail.FirstName, detail.LastName, detail.Email, detail.PositionTitle, detail.Department,
             detail.HiringManagerContact, detail.AnticipatedStartDate, detail.EmployeeId,
-            detail.RecruitingAssistant?.Id, detail.Recruiter?.Id, detail.OnboardingSpecialist?.Id,
+            detail.Recruiter?.Id, detail.ServiceChannel?.Id, detail.UnitHr?.Id,
             detail.Requirements, detail.I9Method, detail.Qualifications);
     }
 
@@ -75,7 +75,7 @@ public class JourneyServiceTests : IAsyncLifetime
     [Fact]
     public async Task Creating_a_candidate_lays_out_the_journey_and_records_who_did_it()
     {
-        var ra = await _db.Staff.FirstAsync(s => s.Role == StaffRole.RecruitingAssistant);
+        var ra = await _db.Staff.FirstAsync(s => s.Role == StaffRole.Recruiter);
         var input = new CandidateInput(
             "Jesse", "Rowe", "jesse.rowe@example.test", "Clinical Lab Scientist", "Pathology", null, null, null,
             ra.Id, null, null,
@@ -98,7 +98,7 @@ public class JourneyServiceTests : IAsyncLifetime
         var recruiter = await _db.Staff.FirstAsync(s => s.Role == StaffRole.Recruiter);
         var input = new CandidateInput(
             " ", "Rowe", "not-an-email", "Clinical Lab Scientist", "", null, null, null,
-            recruiter.Id, null, null,
+            null, recruiter.Id, null,
             new CandidateRequirements(false, false, false, false, false), I9Method.NotChosen,
             [new QualificationInput(QualificationKind.License, "Clinical Laboratory Scientist License", " ")]);
 
@@ -106,8 +106,8 @@ public class JourneyServiceTests : IAsyncLifetime
 
         var errors = (await act.Should().ThrowAsync<JourneyValidationException>()).Which.Errors;
         errors.Keys.Should().BeEquivalentTo(
-            "firstName", "email", "department", "recruitingAssistantId", "qualifications[0].documentToSubmit");
-        errors["recruitingAssistantId"].Should().ContainSingle().Which.Should().Be($"{recruiter.Name} is not a recruiting assistant.");
+            "firstName", "email", "department", "serviceChannelId", "qualifications[0].documentToSubmit");
+        errors["serviceChannelId"].Should().ContainSingle().Which.Should().Be($"{recruiter.Name} is not a Service Channel specialist.");
         (await _db.Candidates.CountAsync()).Should().Be(8);
     }
 
@@ -136,12 +136,12 @@ public class JourneyServiceTests : IAsyncLifetime
     public async Task Reassigning_names_people_in_the_history()
     {
         var other = await _db.Staff.SingleAsync(s => s.Name == "Pat Kim");
-        var input = await InputFor("Morgan") with { OnboardingSpecialistId = other.Id };
+        var input = await InputFor("Morgan") with { ServiceChannelId = other.Id };
 
         var detail = (await _journey.UpdateCandidateAsync(await IdOf("Morgan"), input, _me))!;
 
-        detail.OnboardingSpecialist!.Name.Should().Be("Pat Kim");
-        detail.History[0].Detail.Should().Be("Onboarding specialist: Sample User → Pat Kim.");
+        detail.ServiceChannel!.Name.Should().Be("Pat Kim");
+        detail.History[0].Detail.Should().Be("Service Channel: Sample User → Pat Kim.");
     }
 
     [Fact]

@@ -27,7 +27,7 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         if (assignedTo is { } staffId)
         {
             query = query.Where(c =>
-                c.RecruitingAssistantId == staffId || c.RecruiterId == staffId || c.OnboardingSpecialistId == staffId);
+                c.RecruiterId == staffId || c.ServiceChannelId == staffId || c.UnitHrId == staffId);
         }
 
         var now = clock.GetUtcNow();
@@ -180,9 +180,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         candidate.HiringManagerContact = Blank(input.HiringManagerContact);
         candidate.AnticipatedStartDate = input.AnticipatedStartDate;
         candidate.EmployeeId = Blank(input.EmployeeId);
-        candidate.RecruitingAssistantId = input.RecruitingAssistantId;
         candidate.RecruiterId = input.RecruiterId;
-        candidate.OnboardingSpecialistId = input.OnboardingSpecialistId;
+        candidate.ServiceChannelId = input.ServiceChannelId;
+        candidate.UnitHrId = input.UnitHrId;
         candidate.RequiresDrugScreen = input.Requirements.DrugScreen;
         candidate.RequiresDmvPullNotice = input.Requirements.DmvPullNotice;
         candidate.RequiresFingerprinting = input.Requirements.Fingerprinting;
@@ -216,9 +216,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         ["Hiring manager contact"] = c.HiringManagerContact,
         ["Start date"] = c.AnticipatedStartDate?.ToString("yyyy-MM-dd"),
         ["Employee ID"] = c.EmployeeId,
-        ["Recruiting assistant"] = staffName(c.RecruitingAssistantId),
         ["Recruiter"] = staffName(c.RecruiterId),
-        ["Onboarding specialist"] = staffName(c.OnboardingSpecialistId),
+        ["Service Channel"] = staffName(c.ServiceChannelId),
+        ["Unit HR"] = staffName(c.UnitHrId),
         ["Drug screen"] = YesNo(c.RequiresDrugScreen),
         ["DMV pull notice"] = YesNo(c.RequiresDmvPullNotice),
         ["Fingerprinting"] = YesNo(c.RequiresFingerprinting),
@@ -272,9 +272,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
 
         var assignments = new (string Field, int? Id, StaffRole Role, string Label)[]
         {
-            ("recruitingAssistantId", input.RecruitingAssistantId, StaffRole.RecruitingAssistant, "recruiting assistant"),
             ("recruiterId", input.RecruiterId, StaffRole.Recruiter, "recruiter"),
-            ("onboardingSpecialistId", input.OnboardingSpecialistId, StaffRole.OnboardingSpecialist, "onboarding specialist"),
+            ("serviceChannelId", input.ServiceChannelId, StaffRole.ServiceChannel, "Service Channel specialist"),
+            ("unitHrId", input.UnitHrId, StaffRole.UnitHr, "Unit HR contact"),
         };
         var ids = assignments.Select(a => a.Id).OfType<int>().ToList();
         var staff = await db.Staff.Where(s => ids.Contains(s.Id)).ToDictionaryAsync(s => s.Id, ct);
@@ -307,6 +307,7 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
             current?.Step!.Key,
             current?.Step!.Title,
             current?.Status,
+            current?.Step!.Owner,
             owed?.DueDate,
             owed?.DueTime,
             c.Steps.Any(s => CandidateJourney.IsOverdue(s, now)),
@@ -314,9 +315,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
             c.Steps.Count(s => s.Status == StepStatus.Complete),
             c.Steps.Count(s => s.Status != StepStatus.Skipped),
             c.AnticipatedStartDate,
-            c.RecruitingAssistant?.Name,
             c.Recruiter?.Name,
-            c.OnboardingSpecialist?.Name);
+            c.ServiceChannel?.Name,
+            c.UnitHr?.Name);
     }
 
     private async Task<CandidateDetail> ToDetailAsync(Candidate c, CancellationToken ct)
@@ -336,7 +337,7 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
             c.AnticipatedStartDate,
             deadlines.ClearanceDeadline(c.AnticipatedStartDate),
             c.EmployeeId,
-            Summary(c.RecruitingAssistant), Summary(c.Recruiter), Summary(c.OnboardingSpecialist),
+            Summary(c.Recruiter), Summary(c.ServiceChannel), Summary(c.UnitHr),
             new CandidateRequirements(
                 c.RequiresDrugScreen, c.RequiresDmvPullNotice, c.RequiresFingerprinting, c.RequiresPositionDescription, c.EligibleForParking),
             c.I9Method, c.I9RepresentativeName, c.I9RepresentativeEmail, c.FingerprintAtiNumber,

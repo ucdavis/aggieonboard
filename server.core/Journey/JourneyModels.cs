@@ -16,6 +16,7 @@ public sealed record PipelineRow(
     string? CurrentStepKey,
     string? CurrentStepTitle,
     StepStatus? CurrentStepStatus,
+    StaffRole? CurrentStepOwner,
     DateOnly? NextDueDate,
     TimeOnly? NextDueTime,
     bool IsOverdue,
@@ -23,9 +24,9 @@ public sealed record PipelineRow(
     int CompletedSteps,
     int ApplicableSteps,
     DateOnly? AnticipatedStartDate,
-    string? RecruitingAssistant,
     string? Recruiter,
-    string? OnboardingSpecialist);
+    string? ServiceChannel,
+    string? UnitHr);
 
 public sealed record CandidateRequirements(
     bool DrugScreen,
@@ -45,9 +46,9 @@ public sealed record CandidateInput(
     string? HiringManagerContact,
     DateOnly? AnticipatedStartDate,
     string? EmployeeId,
-    int? RecruitingAssistantId,
     int? RecruiterId,
-    int? OnboardingSpecialistId,
+    int? ServiceChannelId,
+    int? UnitHrId,
     CandidateRequirements Requirements,
     I9Method I9Method,
     IReadOnlyList<QualificationInput> Qualifications,
@@ -95,9 +96,9 @@ public sealed record CandidateDetail(
     DateOnly? AnticipatedStartDate,
     DateOnly? ClearanceDeadline,
     string? EmployeeId,
-    StaffSummary? RecruitingAssistant,
     StaffSummary? Recruiter,
-    StaffSummary? OnboardingSpecialist,
+    StaffSummary? ServiceChannel,
+    StaffSummary? UnitHr,
     CandidateRequirements Requirements,
     I9Method I9Method,
     string? I9RepresentativeName,

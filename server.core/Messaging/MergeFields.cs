@@ -23,9 +23,9 @@ public static partial class MergeFields
 
         // Who is writing, and who to ask
         new("SenderName", "The staff member sending the message, for the signature."),
-        new("RecruitingAssistantContact", "The assigned recruiting assistant's email, and phone if any."),
-        new("OnboardingSpecialistName", "The assigned onboarding specialist's name."),
-        new("OnboardingSpecialistContact", "The assigned onboarding specialist's email, and phone if any."),
+        new("RecruitingAssistantContact", "The assigned recruiter's email, and phone if any (the audit's recruiting assistant)."),
+        new("OnboardingSpecialistName", "The assigned Service Channel specialist's name (the audit's onboarding specialist)."),
+        new("OnboardingSpecialistContact", "The assigned Service Channel specialist's email, and phone if any."),
 
         // Deadlines
         new("ReferenceSurveyDeadline", "When references should finish their SkillSurvey (message 1)."),

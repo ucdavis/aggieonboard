@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Next: local tweaks (copy review, open questions) until Phase 7 (hosting).**
+> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). In progress: the one-place redesign (see "Redesign: groups, stages, one place"); step 1 (sign-in page) and step 2 (staff groups) done. Then Phase 7 (hosting).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -381,6 +381,24 @@ location on their next request, and deactivating them gave 403 until restored. N
 cutoff, length) and locations are still edited only in seed data; the Schedule's own pages handle hours and sessions.
 Planned: template editor (versioned, with merge-field validation), settings and holiday
 calendar, staff user management.
+
+**Redesign: groups, stages, one place** (decided 2026-10-26, after Phase 6). The new employee gets one place to do
+every task, in order, even when a task sends them out to another app; staff work by group.
+- **Groups own the steps.** Recruiter (Talent Acquisition, with the recruiting assistants): 1–4. Service Channel: 5–14,
+  through "cleared to start", then hands the new employee back to Unit HR. Unit HR (with L&D): 15, the first day and
+  New Employee Welcome. Each candidate has one person per group. Schedule teams (I-9 desk, police, OEHC) stay as they are.
+- **Stages open by themselves.** Steps that can run together form a stage; when the last step of a stage completes,
+  the next stage opens on its own, so the new employee comes back to their checklist and does the next thing.
+- **Emails wait for inactivity.** A newly opened task appears in the checklist at once. Its email goes only if the
+  new employee hasn't used the checklist for an hour (a setting), and not at all if they've already done it.
+- **The new employee sees only what's needed now,** in order: the current stage's tasks, then what's done. Later
+  stages stay hidden until they open.
+- **Staff see a timeline by group:** each candidate's steps clustered by the responsible group, each one expanding.
+
+Steps: (1) ✅ sandbox sign-in names the groups and adds **New employee view**; (2) ✅ roles become Recruiter, Service
+Channel and Unit HR (migration `StaffGroups` moves recruiting assistants into the recruiter slot and renames stored
+roles; message copy still says "onboarding specialist" and its fields keep their names); (3) stages and automatic
+opening; (4) emails held for an hour of inactivity; (5) the portal shows only the current stage; (6) the staff timeline.
 
 **Phase 7: Pilot readiness.** Accessibility pass, `/security-review`, and Azure deploy via the template's
 GitHub Actions + Bicep. These need **user-only prerequisites**: a new Entra app registration (not

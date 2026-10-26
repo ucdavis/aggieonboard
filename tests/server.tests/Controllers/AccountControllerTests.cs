@@ -22,20 +22,20 @@ public class AccountControllerTests
     [InlineData("/\\example.test/phishing", "/")]
     [InlineData("/fetch?sort=date", "/fetch?sort=date")]
     [InlineData("~/me", "~/me")]
-    public void Login_only_redirects_to_local_paths(string? returnUrl, string expectedUrl)
+    public async Task Login_only_redirects_to_local_paths(string? returnUrl, string expectedUrl)
     {
         var httpContext = new DefaultHttpContext
         {
             User = new ClaimsPrincipal(new ClaimsIdentity([], "TestAuth")),
         };
         var actionContext = new ActionContext(httpContext, new RouteData(), new ActionDescriptor());
-        var controller = new AccountController(new ConfigurationBuilder().Build(), new TestEnvironment())
+        var controller = new AccountController(new ConfigurationBuilder().Build(), new TestEnvironment(), TestDbContextFactory.CreateInMemory())
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
             Url = new UrlHelper(actionContext),
         };
 
-        var result = controller.Login(returnUrl);
+        var result = await controller.Login(returnUrl);
 
         result.Should().BeOfType<LocalRedirectResult>().Which.Url.Should().Be(expectedUrl);
     }

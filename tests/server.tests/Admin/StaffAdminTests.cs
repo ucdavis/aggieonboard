@@ -78,14 +78,14 @@ public class StaffAdminTests : IAsyncLifetime
 
         var change = () => Admin().UpdateAsync(pat.Id, Input(pat) with { Role = StaffRole.Recruiter }, _admin);
         await change.Should().ThrowAsync<JourneyRuleException>()
-            .WithMessage("Pat Kim is the onboarding specialist for 1 candidate. Reassign them on each candidate's page first.");
+            .WithMessage("Pat Kim is the Service Channel specialist for 1 candidate. Reassign them on each candidate's page first.");
 
         var saved = (await Admin().UpdateAsync(pat.Id, Input(pat) with { IsActive = false, Phone = null }, _admin))!;
 
-        saved.Notice.Should().Be("Pat Kim can no longer sign in, but is still the onboarding specialist for 1 candidate. Reassign them on each candidate's page.");
+        saved.Notice.Should().Be("Pat Kim can no longer sign in, but is still the Service Channel specialist for 1 candidate. Reassign them on each candidate's page.");
         (await _db.AuditEvents.SingleAsync(e => e.Action == "staff.updated")).Detail
-            .Should().StartWith("Pat Kim: pat.kim@example.test, onboarding specialist, teams: ")
-            .And.Contain(" → pat.kim@example.test, onboarding specialist, inactive, teams: ");
+            .Should().StartWith("Pat Kim: pat.kim@example.test, Service Channel specialist, teams: ")
+            .And.Contain(" → pat.kim@example.test, Service Channel specialist, inactive, teams: ");
     }
 
     [Fact]

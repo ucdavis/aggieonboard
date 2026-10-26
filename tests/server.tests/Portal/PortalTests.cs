@@ -140,7 +140,7 @@ public class PortalTests : IAsyncLifetime
         drug.DueTime.Should().NotBeNull();
 
         view.Steps.Single(s => s.Key == "references").WatchFor.Should().BeNull("it is done");
-        view.Steps.Single(s => s.Key == "references").Contact!.Name.Should().Be("Dana Ortiz");
+        view.Steps.Single(s => s.Key == "references").Contact!.Name.Should().Be("Chris Alvarez", "the Recruiter group owns step 1");
     }
 
     [Fact]

@@ -106,8 +106,8 @@ public sealed class MessageService(
     }
 
     /// <summary>
-    /// Sends because the candidate asked (a new sign-in link). Signed by the onboarding specialist or
-    /// recruiting assistant when one is assigned. Quietly does nothing when it cannot be sent: the
+    /// Sends because the candidate asked (a new sign-in link). Signed by their Service Channel specialist
+    /// or recruiter when one is assigned. Quietly does nothing when it cannot be sent: the
     /// person asking learns nothing either way (AGENTS.md, invariant 3).
     /// </summary>
     public async Task<bool> SendOnCandidateRequestAsync(int candidateId, string key, CancellationToken ct = default)
@@ -244,12 +244,12 @@ public sealed class MessageService(
         return new EmailAttachment(CalendarInvite.FileName, CalendarInvite.ContentType(cancel), System.Text.Encoding.UTF8.GetBytes(ics));
     }
 
-    /// <summary>Who signs a message nobody on staff pressed Send for: the candidate's specialist or assistant, when assigned.</summary>
+    /// <summary>Who signs a message nobody on staff pressed Send for: the candidate's Service Channel specialist or recruiter, when assigned.</summary>
     private async Task<StaffMember> AssignedSenderAsync(int candidateId, CancellationToken ct)
     {
         var assigned = await db.Candidates
             .Where(c => c.Id == candidateId)
-            .Select(c => c.OnboardingSpecialist ?? c.RecruitingAssistant ?? c.Recruiter)
+            .Select(c => c.ServiceChannel ?? c.Recruiter ?? c.UnitHr)
             .SingleOrDefaultAsync(ct);
         return assigned is { IsActive: true } ? assigned : OnCandidateRequest();
     }

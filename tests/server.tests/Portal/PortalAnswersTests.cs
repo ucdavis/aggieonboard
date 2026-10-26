@@ -186,8 +186,8 @@ public class PortalAnswersTests : IAsyncLifetime
         var detail = (await journey.GetCandidateAsync(casey.Id))!;
         CandidateInput Input(string? name, string? email, string? ati) => new(
             detail.FirstName, detail.LastName, detail.Email, detail.PositionTitle, detail.Department, detail.HiringManagerContact,
-            detail.AnticipatedStartDate, detail.EmployeeId, detail.RecruitingAssistant?.Id, detail.Recruiter?.Id,
-            detail.OnboardingSpecialist?.Id, detail.Requirements, detail.I9Method, detail.Qualifications, name, email, ati);
+            detail.AnticipatedStartDate, detail.EmployeeId, detail.Recruiter?.Id, detail.ServiceChannel?.Id,
+            detail.UnitHr?.Id, detail.Requirements, detail.I9Method, detail.Qualifications, name, email, ati);
 
         var halfDone = () => journey.UpdateCandidateAsync(casey.Id, Input(null, "jesse@example.test", "bad ati!"), sample);
         (await halfDone.Should().ThrowAsync<JourneyValidationException>()).Which.Errors.Keys

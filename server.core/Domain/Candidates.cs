@@ -24,12 +24,13 @@ public class Candidate
     /// <summary>Assigned once the candidate is in UCPath (message 13).</summary>
     public string? EmployeeId { get; set; }
 
-    public int? RecruitingAssistantId { get; set; }
-    public StaffMember? RecruitingAssistant { get; set; }
+    // Who is responsible for the candidate in each group that owns steps (see StaffRole).
     public int? RecruiterId { get; set; }
     public StaffMember? Recruiter { get; set; }
-    public int? OnboardingSpecialistId { get; set; }
-    public StaffMember? OnboardingSpecialist { get; set; }
+    public int? ServiceChannelId { get; set; }
+    public StaffMember? ServiceChannel { get; set; }
+    public int? UnitHrId { get; set; }
+    public StaffMember? UnitHr { get; set; }
 
     // Position requirements: each one adds steps, or sections of message 12.
     public bool RequiresDrugScreen { get; set; }
