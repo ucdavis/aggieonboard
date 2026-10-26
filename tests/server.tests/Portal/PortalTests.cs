@@ -38,7 +38,8 @@ public class PortalTests : IAsyncLifetime
 
     private PortalService Portal() =>
         new(_db, _clock, Tokens(), TestMessaging.Service(_db, _clock, _email),
-            new SchedulingService(_db, _clock, TestMessaging.Service(_db, _clock, _email)));
+            new SchedulingService(_db, _clock, TestMessaging.Service(_db, _clock, _email)),
+            new PortalAnswers(_db, _clock, TestMessaging.Service(_db, _clock, _email)));
 
     private async Task<int> IdOf(string firstName) => (await _db.Candidates.SingleAsync(c => c.FirstName == firstName)).Id;
 

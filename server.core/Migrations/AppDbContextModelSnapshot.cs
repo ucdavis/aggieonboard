@@ -237,6 +237,10 @@ namespace server.core.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("FingerprintAtiNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -250,6 +254,14 @@ namespace server.core.Migrations
                         .IsRequired()
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("I9RepresentativeEmail")
+                        .HasMaxLength(320)
+                        .HasColumnType("nvarchar(320)");
+
+                    b.Property<string>("I9RepresentativeName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("LastName")
                         .IsRequired()

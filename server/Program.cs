@@ -65,6 +65,7 @@ try
         });
     builder.Services.AddScoped<PortalTokens>();
     builder.Services.AddScoped<PortalService>();
+    builder.Services.AddScoped<PortalAnswers>();
     builder.Services.AddScoped<MessageService>();
 
     // Anonymous portal endpoints (link requests, sign-in) are limited per client address.

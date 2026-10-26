@@ -15,15 +15,18 @@ import { renderRoute } from '@/test/routerUtils.tsx';
 // staff endpoint such as /api/user/me.
 
 const portalStep = (overrides: Partial<PortalStep> = {}): PortalStep => ({
+  atiNumber: null,
   booking: null,
   completedAt: null,
   contact: { details: 'pat.kim@example.test or 916-555-0142', name: 'Pat Kim' },
   dueDate: '2026-10-26',
   dueTime: '16:54:00',
+  i9Choice: null,
   isOverdue: false,
   key: 'drug-screen',
   messages: [],
   phase: 'PreEmployment',
+  representative: null,
   state: 'ToDo',
   title: 'Drug screen',
   watchFor: {
@@ -429,6 +432,191 @@ describe('emailed link', () => {
       expect(
         screen.getByRole('button', { name: 'Email me a new link' })
       ).toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+});
+
+describe('answering in the checklist', () => {
+  it('chooses remote I-9 verification after asking, with in person still offered until then', async () => {
+    let remote = false;
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(
+          view([
+            portalStep({
+              booking: remote
+                ? null
+                : {
+                    appointment: null,
+                    canBook: true,
+                    typeKey: 'i9-in-person',
+                    typeName: 'In-person I-9 verification',
+                  },
+              i9Choice: remote
+                ? { canChoose: false, method: 'Remote' }
+                : { canChoose: true, method: 'NotChosen' },
+              key: 'i9',
+              state: remote ? 'InProgress' : 'ToDo',
+              title: 'I-9 verification',
+            }),
+          ])
+        )
+      ),
+      http.post('/api/portal/i9/remote', () => {
+        remote = true;
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      expect(
+        await screen.findByText("Choose how you'll verify your documents")
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Book In-person I-9 verification' })
+      ).toBeInTheDocument();
+
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Verify remotely' })
+      );
+      expect(remote).toBe(false);
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Yes, verify remotely' })
+      );
+
+      expect(
+        await screen.findByText(
+          "You chose remote verification. We're emailing you the next steps."
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'You chose to verify your documents remotely, with an authorized representative.'
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', {
+          name: 'Book In-person I-9 verification',
+        })
+      ).not.toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("sends the representative's details, showing the server's field errors", async () => {
+    const sent: unknown[] = [];
+    let saved: { email: string; name: string } | null = null;
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(
+          view([
+            portalStep({
+              key: 'i9-remote',
+              representative: saved ?? { email: null, name: null },
+              state: saved ? 'InProgress' : 'ToDo',
+              title: 'Remote I-9 representative',
+            }),
+          ])
+        )
+      ),
+      http.put('/api/portal/i9/representative', async ({ request }) => {
+        const body = (await request.json()) as { email: string; name: string };
+        sent.push(body);
+        if (!body.email.includes('@')) {
+          return HttpResponse.json(
+            {
+              errors: {
+                email: ['Enter an email address like name@example.com.'],
+              },
+              status: 400,
+            },
+            { status: 400 }
+          );
+        }
+        saved = body;
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      await userEvent.type(
+        await screen.findByLabelText('Full name'),
+        'Jesse Brooks'
+      );
+      await userEvent.type(screen.getByLabelText('Email address'), 'jesse');
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(
+        await screen.findByText('Enter an email address like name@example.com.')
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText('Email address')).toHaveAttribute(
+        'aria-invalid',
+        'true'
+      );
+
+      await userEvent.type(
+        screen.getByLabelText('Email address'),
+        '@example.test'
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(
+        await screen.findByText(
+          "Thanks. We have your representative's details."
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Jesse Brooks (jesse@example.test)')
+      ).toBeInTheDocument();
+      expect(sent).toHaveLength(2);
+      expect(
+        screen.getByRole('button', { name: 'Change' })
+      ).toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('sends the ATI number after fingerprinting', async () => {
+    let saved: string | null = null;
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(
+          view([
+            portalStep({
+              atiNumber: { value: saved },
+              key: 'fingerprinting',
+              state: 'InProgress',
+              title: 'Fingerprinting (Live Scan)',
+              watchFor: null,
+            }),
+          ])
+        )
+      ),
+      http.put('/api/portal/fingerprinting/ati', async ({ request }) => {
+        saved = ((await request.json()) as { atiNumber: string }).atiNumber;
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      await userEvent.type(
+        await screen.findByLabelText('ATI number'),
+        'A1B2C3D4E5'
+      );
+      await userEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+      expect(
+        await screen.findByText('Thanks. We have your ATI number.')
+      ).toBeInTheDocument();
+      expect(saved).toBe('A1B2C3D4E5');
+      expect(screen.getByText('A1B2C3D4E5')).toBeInTheDocument();
     } finally {
       cleanup();
     }

@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-23 — Phases 0–4 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Phase 5 re-scoped to scheduling; 5a (the schedule) and 5b (candidate booking) done; next: 5c (the other answers).**
+> **STATUS 2026-10-26 — Phases 0–5 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). Phase 5 (scheduling and candidate answers: 5a, 5b, 5c) done; next: Phase 6 (admin).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -89,7 +89,8 @@ out and swapping only its `[placeholders]` for merge fields; tests fail if an ap
 still contains a bracketed placeholder or names an unknown field. Vendor messages (2, 8, 10) keep
 their original brackets, since the app never fills them. Placeholders that stood for links became
 Markdown links using the placeholder's own words (`[OEHC appointment/request form](…)`,
-`[Schedule fingerprinting appointment](…)`). Message 7's bare `[Link]` became `[Link](…)`.
+`[Schedule fingerprinting appointment](…)`). Message 7's bare `[Link]` became `[Link](…)`. A file with `version: 2` in its front matter (`*.v2.md`) is later wording
+for the same message, written by us and listed under *Copy to review*; the highest version is the one sent.
 
 Not carried over, because they are notes rather than copy: #3 ("Remove?"), #6's internal SharePoint/Box
 links, #13's "What changes" commentary, and #14's Box link.
@@ -102,7 +103,18 @@ Seeded verbatim. These look like drafting artifacts, but changing them is your c
 - **7**: the form link's text is just "Link". Accessible link text would name the form.
 - **11B**: the paragraph "The supplied remote template requires a representative over 18…" reads like a
   note about the source template and repeats the previous paragraph. A lone "." follows the last link.
-- **11A / 11B / 12**: "reply to this email" instructions will need updating once the portal collects those answers (Phase 5).
+- **11A / 11B / 12**: version 2 of each (`*.v2.md`, drafted by us in 5c and sent from then on; version 1 stays as the audit
+  wrote it) changes only the "reply to this email" instructions to point to the checklist:
+  - 11A: "In your onboarding checklist, choose whether you'd like to complete Section 2:", "Book your Wednesday date and
+    time in your checklist." and "choose **Remote** in your checklist".
+  - 11B: "In your onboarding checklist, enter the **full name** and **email address** of the adult who will serve as your
+    authorized representative." in place of the reply-with block.
+  - 12 (fingerprinting): step 1 books "In your onboarding checklist" (the external scheduling link is gone), step 2 "Send
+    your appointment confirmation" is removed (the app knows), and the ATI step says "Enter the ATI number in your
+    onboarding checklist". The steps are renumbered 1–3.
+  - Left alone in version 2 too: 11B's template-note paragraph and lone "."; 12's "Print the **attached** …
+    Authorization … form" (the app attaches nothing, in either version); 11A's "Wednesdays from 8 a.m.–2 p.m." is copy, so
+    it won't follow the I-9 desk's hours if they change in the schedule.
 
 New wording the app needed (not in the audit), written by us and open to rewrite:
 
@@ -115,6 +127,15 @@ New wording the app needed (not in the audit), written by us and open to rewrite
   cancel it / Keep it", "Until {cutoff}, you can change or cancel it here.", "It's too close to change here. To change it,
   reply to your confirmation email.", "You can book {appointment} once we ask you to. We'll email you when it's time.",
   and "Your {appointment} appointment is booked. We're emailing you the details."
+- **Answers in the portal** (5c): "Choose how you'll verify your documents", "Or verify remotely, with an authorized
+  representative.", "Verify remotely" / "Verify remotely? We'll email you what to do next. Yes, verify remotely / Back",
+  "You chose to verify your documents remotely, with an authorized representative.", "You chose remote verification.
+  We're emailing you the next steps."; "Your authorized representative" with "Full name" / "Email address"; "Your ATI
+  number" with "The Automated Transaction Identifier the police department gave you at your fingerprinting appointment.";
+  "Send", "Change", "Thanks. We have your representative's details." / "Thanks. We have your ATI number."; and the
+  refusals "You can choose how to verify your documents once we ask you to…", "Cancel your in-person appointment first,
+  then choose remote verification.", "You chose remote verification. To verify in person instead, contact your onboarding
+  specialist." and "You can enter your ATI number after your fingerprinting appointment."
 - **Portal labels**: "Your onboarding checklist", "To do / In progress / Coming up / Done", "Nothing to do right now",
   "You're all caught up. We'll email you when there's something to do.", "Watch for an email from … Check your spam or
   junk folder if you don't see it.", "Read our email: …", "Questions? Contact … at …", the Continue page ("For your
@@ -133,7 +154,8 @@ Built in Phase 1 (`server.core/Domain/`). Enums are stored as their names.
   **MessageTemplateSection**s (condition + Markdown body). Sender is App or External.
 - **Candidate**: name, email, position, department, hiring-manager contact, anticipated start date,
   employee ID, assigned RA / recruiter / onboarding specialist, requirement flags (drug screen,
-  DMV, fingerprinting, PD, parking), I-9 method, and **CandidateQualification**s (license /
+  DMV, fingerprinting, PD, parking), I-9 method, the remote I-9 representative (name, email) and fingerprinting ATI number
+  (5c), and **CandidateQualification**s (license /
   certification / degree + document to submit). `Meets(condition)` decides steps and sections.
 - **CandidateStep**: status (`Upcoming → ActionNeeded → Waiting → Complete`, plus `Skipped`,
   `Blocked`), activated at, due date + optional due time (Pacific), `DueOverridden`, completed
@@ -144,7 +166,8 @@ Built in Phase 1 (`server.core/Domain/`). Enums are stored as their names.
   description, confirmed flag, open question.
 - **Holiday**: UC Davis observed holidays, Nov 2026 – Sep 2027 (dates.ucdavis.edu). Extend yearly.
 
-Later phases add: **CandidateResponse** (5), **SentMessage** (3, built: subject, HTML and text as sent, template version, sender, automatic flag), **CandidateAccessToken** (4, built: SHA-256 hash, expiry, consumed-at),
+Later phases add: **CandidateResponse** (5; not needed after all: the two answers are candidate fields and their history
+is the audit log), **SentMessage** (3, built: subject, HTML and text as sent, template version, sender, automatic flag), **CandidateAccessToken** (4, built: SHA-256 hash, expiry, consumed-at),
 **AuditEvent** (2, built: every staff change, shown as the candidate's history).
 
 ### Deadline rules
@@ -318,7 +341,22 @@ Action needed; marking attended completes it where the table says so. Booking in
   Planned: pick a location and time in the portal within the window; change or cancel until the
   cutoff; confirmation, change and cancellation emails with an .ics invite; day-before reminders from a background
   job. *Demo: a candidate books fingerprinting and it appears on the police department's roster.*
-- **5c, the other answers:** the I-9 choice (in person → book; remote → representative's name and email, which
+- **5c, the other answers:** ✅ 2026-10-26. Built as described. On the I-9 step (after 11A) the candidate books the
+  in-person desk or chooses **Verify remotely**. Remote sets the I-9 method, moves step 8 to waiting, starts step 9 and
+  sends 11B automatically, signed by their specialist; the step starts even if the email can't go, and the history says
+  why. Once remote is chosen, or an in-person appointment is booked, the choice closes; switching back is for staff (the
+  candidate's edit form). Step 9 asks for the representative's full name and email address; step 11 asks for the ATI
+  number once the fingerprinting appointment has started or been marked attended. Each answer moves its step to waiting,
+  can be corrected while the step is open, and is recorded in the history; staff see it on the candidate page and can
+  enter it themselves from an emailed reply (the edit form, same checks). ATI numbers are stored upper case without
+  spaces; only letters, digits and hyphens are required, since the format isn't confirmed. Version 2 of 11A, 11B and 12
+  points to the checklist (see *Copy to review*); seeding adds a version only when the database has nothing at or above
+  it, so wording edited in the app is never shadowed. Verified on the sandbox: Morgan got 11A v2, chose remote in the
+  portal, and 11B v2 arrived with Reply-To the specialist while the representative step opened with its due date; Casey
+  entered a representative (bad input → field errors) and, after the appointment, an ATI number (refused before it,
+  `sbx 12345` stored as `SBX12345`); staff saw both and the history. Not decided: whether staff should be emailed when a
+  candidate answers (today the pipeline shows the step waiting).
+  Planned: the I-9 choice (in person → book; remote → representative's name and email, which
   starts 11B), the ATI number after fingerprinting, and new template versions of 11A, 11B and 12 that point to the
   checklist.
 
@@ -348,4 +386,5 @@ These are from the audit's "Needs" lists. Each has a placeholder setting so it d
   OEHC timing vs I-9. Representative eligibility (age 18+, family excluded?). In-person I-9 days/hours. Is a separate
   in-person confirmation email needed? Must fingerprinting be scheduled, attended, or cleared before start? Which #13 forms are in DocuSign?
 - Vendors: can SkillSurvey, Universal, and Quest wording be customized? This only affects the "watch for" card text.
-- Ours: repo name/owner; whether a later version should accept document uploads (would break invariant #1, so it needs a data decision).
+- Ours: should staff be emailed when a candidate answers in the portal (representative, ATI number), or is the
+  pipeline's "waiting" enough? Repo name/owner; whether a later version should accept document uploads (would break invariant #1, so it needs a data decision).

@@ -108,10 +108,13 @@ export type CandidateDetail = {
   department: string;
   email: string;
   employeeId: string | null;
+  fingerprintAtiNumber: string | null;
   firstName: string;
   hiringManagerContact: string | null;
   history: HistoryEntry[];
   i9Method: I9Method;
+  i9RepresentativeEmail: string | null;
+  i9RepresentativeName: string | null;
   id: number;
   lastName: string;
   /** A side effect of the change just made, such as an automatic message. */
@@ -169,9 +172,12 @@ export type CandidateInput = {
   department: string;
   email: string;
   employeeId: string | null;
+  fingerprintAtiNumber: string | null;
   firstName: string;
   hiringManagerContact: string | null;
   i9Method: I9Method;
+  i9RepresentativeEmail: string | null;
+  i9RepresentativeName: string | null;
   lastName: string;
   onboardingSpecialistId: number | null;
   positionTitle: string;

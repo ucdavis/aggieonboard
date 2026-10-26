@@ -41,6 +41,16 @@ public class Candidate
     /// <summary>The candidate's answer to message 11A. Decides whether the remote I-9 step applies.</summary>
     public I9Method I9Method { get; set; }
 
+    /// <summary>
+    /// Who will examine the candidate's documents for a remote I-9 (message 11B's answer). Staff pass it
+    /// to I-9 Tracker Complete, which emails the representative. A contact, not identity data.
+    /// </summary>
+    public string? I9RepresentativeName { get; set; }
+    public string? I9RepresentativeEmail { get; set; }
+
+    /// <summary>The Live Scan Automated Transaction Identifier from the fingerprinting appointment (message 12).</summary>
+    public string? FingerprintAtiNumber { get; set; }
+
     public List<CandidateQualification> Qualifications { get; set; } = [];
     public List<CandidateStep> Steps { get; set; } = [];
 

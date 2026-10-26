@@ -18,9 +18,12 @@ type FormValues = {
   department: string;
   email: string;
   employeeId: string;
+  fingerprintAtiNumber: string;
   firstName: string;
   hiringManagerContact: string;
   i9Method: I9Method;
+  i9RepresentativeEmail: string;
+  i9RepresentativeName: string;
   lastName: string;
   onboardingSpecialistId: string;
   positionTitle: string;
@@ -42,9 +45,15 @@ const schema = z.object({
   department: required('Department'),
   email: z.email('Enter an email address like name@example.com.'),
   employeeId: z.string().max(20, 'Employee ID must be 20 characters or fewer.'),
+  fingerprintAtiNumber: z.string(),
   firstName: required('First name'),
   hiringManagerContact: z.string().max(500),
   i9Method: z.enum(['NotChosen', 'InPerson', 'Remote']),
+  i9RepresentativeEmail: z.union([
+    z.literal(''),
+    z.email('Enter an email address like name@example.com.'),
+  ]),
+  i9RepresentativeName: z.string(),
   lastName: required('Last name'),
   onboardingSpecialistId: z.string(),
   positionTitle: required('Position title'),
@@ -82,9 +91,12 @@ const toValues = (c?: CandidateDetail): FormValues => ({
   department: c?.department ?? '',
   email: c?.email ?? '',
   employeeId: c?.employeeId ?? '',
+  fingerprintAtiNumber: c?.fingerprintAtiNumber ?? '',
   firstName: c?.firstName ?? '',
   hiringManagerContact: c?.hiringManagerContact ?? '',
   i9Method: c?.i9Method ?? 'NotChosen',
+  i9RepresentativeEmail: c?.i9RepresentativeEmail ?? '',
+  i9RepresentativeName: c?.i9RepresentativeName ?? '',
   lastName: c?.lastName ?? '',
   onboardingSpecialistId: c?.onboardingSpecialist
     ? String(c.onboardingSpecialist.id)
@@ -117,9 +129,12 @@ const toInput = (v: FormValues): CandidateInput => ({
   department: v.department.trim(),
   email: v.email.trim(),
   employeeId: blank(v.employeeId),
+  fingerprintAtiNumber: blank(v.fingerprintAtiNumber),
   firstName: v.firstName.trim(),
   hiringManagerContact: blank(v.hiringManagerContact),
   i9Method: v.i9Method,
+  i9RepresentativeEmail: blank(v.i9RepresentativeEmail),
+  i9RepresentativeName: blank(v.i9RepresentativeName),
   lastName: v.lastName.trim(),
   onboardingSpecialistId: idOrNull(v.onboardingSpecialistId),
   positionTitle: v.positionTitle.trim(),
@@ -305,6 +320,47 @@ export function CandidateForm({
               </div>
             )}
           </form.AppField>
+          {/* Answers to 11B and 12, for a candidate who replied by email instead of in the portal. */}
+          <form.Subscribe selector={(s) => s.values.i9Method === 'Remote'}>
+            {(remote) =>
+              remote && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <form.AppField name="i9RepresentativeName">
+                    {(f) => (
+                      <f.TextField label="I-9 representative" placeholder="" />
+                    )}
+                  </form.AppField>
+                  <form.AppField name="i9RepresentativeEmail">
+                    {(f) => (
+                      <f.TextField
+                        label="Representative's email"
+                        placeholder="name@example.com"
+                        type="email"
+                      />
+                    )}
+                  </form.AppField>
+                </div>
+              )
+            }
+          </form.Subscribe>
+          <form.Subscribe
+            selector={(s) => s.values.requirements.fingerprinting}
+          >
+            {(fingerprinting) =>
+              fingerprinting && (
+                <div className="max-w-xs">
+                  <form.AppField name="fingerprintAtiNumber">
+                    {(f) => (
+                      <f.TextField
+                        label="Fingerprinting ATI number"
+                        placeholder="After the appointment"
+                      />
+                    )}
+                  </form.AppField>
+                </div>
+              )
+            }
+          </form.Subscribe>
         </fieldset>
 
         <form.Field mode="array" name="qualifications">

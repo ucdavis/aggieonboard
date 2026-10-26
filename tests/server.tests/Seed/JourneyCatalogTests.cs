@@ -17,13 +17,44 @@ public class JourneyCatalogTests
 
     private static IEnumerable<MessageTemplateFile> AppMessages => Messages.Where(m => m.Sender == MessageSender.App);
 
+    /// <summary>What the app sends: each message's highest version.</summary>
+    private static Dictionary<string, MessageTemplateFile> Latest =>
+        Messages.GroupBy(m => m.Key).ToDictionary(g => g.Key, g => g.MaxBy(m => m.Version)!);
+
     [Fact]
     public void Embeds_every_message_from_the_audit()
     {
-        Messages.Where(m => !SystemMessages.Keys.Contains(m.Key)).Select(m => m.AuditReference)
+        Messages.Where(m => !SystemMessages.Keys.Contains(m.Key) && m.Version == 1).Select(m => m.AuditReference)
             .Should().Equal("1", "2", "4", "5", "7", "8", "9", "10", "11A", "11B", "12", "13");
         Messages.Select(m => m.Key).Should().Contain(SystemMessages.Keys);
-        Messages.Select(m => m.Key).Should().OnlyHaveUniqueItems();
+        Messages.Select(m => (m.Key, m.Version)).Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public void A_later_version_follows_the_one_before_it_and_keeps_its_shape()
+    {
+        // 11A, 11B and 12 point to the checklist in version 2; version 1 stays as the audit wrote it.
+        foreach (var versions in Messages.GroupBy(m => m.Key).Select(g => g.OrderBy(m => m.Version).ToList()))
+        {
+            versions.Select(m => m.Version).Should().Equal(Enumerable.Range(1, versions.Count), $"'{versions[0].Key}' versions are numbered from 1");
+            foreach (var later in versions.Skip(1))
+            {
+                later.AuditReference.Should().Be(versions[0].AuditReference);
+                later.Sender.Should().Be(versions[0].Sender);
+                later.Sections.Select(s => s.Condition).Should().Equal(versions[0].Sections.Select(s => s.Condition));
+            }
+        }
+        Messages.Where(m => m.Version > 1).Select(m => m.AuditReference).Should().Equal("11A", "11B", "12");
+    }
+
+    [Fact]
+    public void The_latest_11A_11B_and_12_send_the_candidate_to_the_checklist_instead_of_asking_for_a_reply()
+    {
+        foreach (var key in new[] { "i9-choice", "i9-remote", "additional-requirements" })
+        {
+            var body = string.Join("\n", Latest[key].Sections.Select(s => s.Body));
+            body.Should().Contain("onboarding checklist").And.NotContainAny("Reply to this email", "reply to this email", "reply **Remote**", "in your reply");
+        }
     }
 
     [Fact]
@@ -36,7 +67,7 @@ public class JourneyCatalogTests
     [Fact]
     public void Every_message_a_step_names_exists_with_the_right_sender()
     {
-        var byKey = Messages.ToDictionary(m => m.Key);
+        var byKey = Latest;
         foreach (var step in Steps)
         {
             foreach (var key in new[] { step.RequestMessageKey, step.AcknowledgmentMessageKey }.OfType<string>())
@@ -96,13 +127,14 @@ public class JourneyCatalogTests
     [Fact]
     public void Message_12_has_a_section_per_additional_requirement()
     {
-        var message = Messages.Single(m => m.Key == "additional-requirements");
-
-        message.Sections.Select(s => s.Condition).Where(c => c != CandidateCondition.Always).Should().Equal(
+        foreach (var message in Messages.Where(m => m.Key == "additional-requirements"))
+        {
+            message.Sections.Select(s => s.Condition).Where(c => c != CandidateCondition.Always).Should().Equal(
             CandidateCondition.DmvPullNotice,
             CandidateCondition.Fingerprinting,
             CandidateCondition.PositionDescription,
             CandidateCondition.Parking);
+        }
         Steps.Where(s => s.RequestMessageKey == "additional-requirements").Select(s => s.Key)
             .Should().Equal("dmv", "fingerprinting", "position-description", "parking");
     }

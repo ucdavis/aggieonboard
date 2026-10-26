@@ -82,6 +82,11 @@ reach parity with.
   `AppointmentReminders`, run by `server/Services/AppointmentReminderJob.cs` on one instance.
   Candidates book in the portal (`/api/portal/appointments`) only for a step that is action needed or
   waiting; `SchedulingService.GetPortalBookingsAsync` says what each step offers, and the portal shows exactly that.
+- Candidate answers (the replies 11A, 11B and 12 used to ask for): `server.core/Portal/PortalAnswers.cs` decides what each
+  step asks for and records the I-9 choice, the remote representative and the ATI number (`/api/portal/i9/*`,
+  `/api/portal/fingerprinting/ati`). Staff enter the same answers on the candidate form; both use the checks in
+  `server.core/Journey/CandidateAnswers.cs`. A message's later wording is a `version: N` file next to version 1
+  (`*.v2.md`); the latest version is what sends.
 - Roles: `UserService` derives them from the `StaffMember` whitelist on every request, for Entra and
   sandbox sign-ins alike. Not on the list = signed in with no roles.
 - Seeds: `server.core/Seed/`. `ReferenceDataSeeder` runs in every environment and only inserts what

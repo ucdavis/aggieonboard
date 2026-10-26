@@ -50,7 +50,10 @@ public sealed record CandidateInput(
     int? OnboardingSpecialistId,
     CandidateRequirements Requirements,
     I9Method I9Method,
-    IReadOnlyList<QualificationInput> Qualifications);
+    IReadOnlyList<QualificationInput> Qualifications,
+    string? I9RepresentativeName = null,
+    string? I9RepresentativeEmail = null,
+    string? FingerprintAtiNumber = null);
 
 public sealed record StepDetail(
     string Key,
@@ -97,6 +100,9 @@ public sealed record CandidateDetail(
     StaffSummary? OnboardingSpecialist,
     CandidateRequirements Requirements,
     I9Method I9Method,
+    string? I9RepresentativeName,
+    string? I9RepresentativeEmail,
+    string? FingerprintAtiNumber,
     IReadOnlyList<QualificationInput> Qualifications,
     IReadOnlyList<StepDetail> Steps,
     IReadOnlyList<HistoryEntry> History,

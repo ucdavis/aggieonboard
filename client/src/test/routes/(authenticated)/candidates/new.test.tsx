@@ -115,6 +115,58 @@ describe('new candidate route', () => {
     }
   });
 
+  it('asks for the representative and ATI number only when they apply', async () => {
+    let body: Record<string, unknown> | undefined;
+    server.use(
+      meAsStaff(),
+      noAppointments(),
+      staffMembers(),
+      http.post('/api/staff/candidates', async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json(candidate({ id: 9 }), { status: 201 });
+      }),
+      http.get('/api/staff/candidates/9', () =>
+        HttpResponse.json(candidate({ id: 9 }))
+      )
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/candidates/new' });
+    try {
+      await screen.findByRole('heading', { name: 'New candidate' });
+      const user = await fillRequired();
+      expect(screen.queryByLabelText('I-9 representative')).toBeNull();
+      expect(screen.queryByLabelText('Fingerprinting ATI number')).toBeNull();
+
+      await user.selectOptions(
+        screen.getByLabelText('I-9 verification'),
+        'Remote'
+      );
+      await user.click(screen.getByLabelText('Fingerprinting (Live Scan)'));
+      await user.type(screen.getByLabelText('I-9 representative'), 'Jo Park');
+      await user.type(
+        screen.getByLabelText("Representative's email"),
+        'jo@example.test'
+      );
+      await user.type(
+        screen.getByLabelText('Fingerprinting ATI number'),
+        'a1b2'
+      );
+      await user.click(
+        screen.getByRole('button', { name: 'Create candidate' })
+      );
+
+      await screen.findByRole('heading', { name: 'Alex Rivera' });
+      expect(body).toMatchObject({
+        fingerprintAtiNumber: 'a1b2',
+        i9Method: 'Remote',
+        i9RepresentativeEmail: 'jo@example.test',
+        i9RepresentativeName: 'Jo Park',
+      });
+    } finally {
+      cleanup();
+    }
+  });
+
   it('puts the server’s field errors on the matching fields', async () => {
     server.use(
       meAsStaff(),

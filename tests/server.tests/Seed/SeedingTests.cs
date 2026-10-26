@@ -47,6 +47,26 @@ public class SeedingTests
     }
 
     [Fact]
+    public async Task A_new_seeded_version_is_added_but_never_over_a_version_written_in_the_app()
+    {
+        await using var db = TestDbContextFactory.CreateInMemory();
+        await ReferenceDataSeeder.SeedAsync(db, Now);
+
+        // A database seeded before version 2 existed gets it on the next start.
+        db.MessageTemplates.RemoveRange(db.MessageTemplates.Where(m => m.Key == "i9-choice" && m.Version == 2));
+        // Wording edited in the app is version 2 of message 12 here; the seeded version 2 must not join it.
+        var twelve = await db.MessageTemplates.SingleAsync(m => m.Key == "additional-requirements" && m.Version == 2);
+        twelve.CreatedBy = "os@example.test";
+        await db.SaveChangesAsync();
+
+        await ReferenceDataSeeder.SeedAsync(db, Now.AddDays(1));
+
+        (await db.MessageTemplates.Where(m => m.Key == "i9-choice").Select(m => m.Version).ToListAsync()).Should().BeEquivalentTo([1, 2]);
+        (await db.MessageTemplates.Where(m => m.Key == "additional-requirements").Select(m => m.CreatedBy).ToListAsync())
+            .Should().BeEquivalentTo(ReferenceDataSeeder.SeedAuthor, "os@example.test");
+    }
+
+    [Fact]
     public async Task Production_settings_leave_unanswered_values_empty()
     {
         await using var db = TestDbContextFactory.CreateInMemory();

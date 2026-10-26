@@ -12,6 +12,8 @@ namespace Server.Controllers.Portal;
 public sealed record SignInRequest(string? Token);
 public sealed record LinkRequest(string? Email);
 public sealed record PortalBookingRequest(string TypeKey, int LocationId, DateTime Start);
+public sealed record RepresentativeRequest(string? Name, string? Email);
+public sealed record AtiNumberRequest(string? AtiNumber);
 
 /// <summary>
 /// The candidate portal's API. Only the candidate cookie authenticates here (<see cref="CandidateAuthentication.Policy"/>),
@@ -22,7 +24,7 @@ public sealed record PortalBookingRequest(string TypeKey, int LocationId, DateTi
 [Authorize(Policy = CandidateAuthentication.Policy)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [JourneyErrors]
-public class PortalController(PortalService portal, PortalTokens tokens, SchedulingService scheduling) : ControllerBase
+public class PortalController(PortalService portal, PortalTokens tokens, SchedulingService scheduling, PortalAnswers answers) : ControllerBase
 {
     /// <summary>The smallest time a link request takes, so its timing says nothing about whether the address is on file.</summary>
     private static readonly TimeSpan LinkRequestFloor = TimeSpan.FromSeconds(1);
@@ -112,6 +114,30 @@ public class PortalController(PortalService portal, PortalTokens tokens, Schedul
         await scheduling.CancelAsync(appointmentId, SchedulingActor.Candidate, null, asCandidateId: CurrentCandidate, ct) is null
             ? NotFound()
             : NoContent();
+
+    /// <summary>Message 11A's "Remote": starts the representative step and emails 11B. In person is booking.</summary>
+    [HttpPost("i9/remote")]
+    public async Task<IActionResult> ChooseRemoteI9(CancellationToken ct)
+    {
+        await answers.ChooseRemoteI9Async(CurrentCandidate, ct);
+        return NoContent();
+    }
+
+    /// <summary>Message 11B's answer. Field errors come back as a 400 keyed "name" and "email".</summary>
+    [HttpPut("i9/representative")]
+    public async Task<IActionResult> SetRepresentative(RepresentativeRequest request, CancellationToken ct)
+    {
+        await answers.SetRepresentativeAsync(CurrentCandidate, request.Name, request.Email, ct);
+        return NoContent();
+    }
+
+    /// <summary>Message 12's ATI number, after the fingerprinting appointment.</summary>
+    [HttpPut("fingerprinting/ati")]
+    public async Task<IActionResult> SetAtiNumber(AtiNumberRequest request, CancellationToken ct)
+    {
+        await answers.SetAtiNumberAsync(CurrentCandidate, request.AtiNumber, ct);
+        return NoContent();
+    }
 
     /// <summary>The policy guarantees the claim; this reads nothing else.</summary>
     private int CurrentCandidate => CandidateAuthentication.CandidateId(User)!.Value;

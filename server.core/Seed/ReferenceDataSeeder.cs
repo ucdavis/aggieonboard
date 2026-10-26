@@ -6,8 +6,9 @@ namespace Server.Core.Seed;
 
 /// <summary>
 /// Inserts any part of <see cref="JourneyCatalog"/> the database does not have yet. Matches on keys
-/// and never updates, so a step, setting or message edited in the app keeps its edit. A message
-/// that exists in any version is left alone: new wording arrives as a version, not a reseed.
+/// and never updates, so a step, setting or message edited in the app keeps its edit. Messages are
+/// matched on key and version: a seeded version is added only when the database has nothing at or
+/// above it, so wording edited in the app is never shadowed by a later seed.
 /// </summary>
 public static class ReferenceDataSeeder
 {
@@ -18,13 +19,16 @@ public static class ReferenceDataSeeder
         var stepKeys = await db.StepDefinitions.Select(s => s.Key).ToListAsync(ct);
         db.StepDefinitions.AddRange(JourneyCatalog.Steps().Where(s => !stepKeys.Contains(s.Key)));
 
-        var messageKeys = await db.MessageTemplates.Select(m => m.Key).Distinct().ToListAsync(ct);
+        var latest = await db.MessageTemplates
+            .GroupBy(m => m.Key)
+            .Select(g => new { g.Key, Version = g.Max(m => m.Version) })
+            .ToDictionaryAsync(m => m.Key, m => m.Version, ct);
         db.MessageTemplates.AddRange(JourneyCatalog.Messages()
-            .Where(m => !messageKeys.Contains(m.Key))
+            .Where(m => m.Version > latest.GetValueOrDefault(m.Key))
             .Select(m => new MessageTemplate
             {
                 Key = m.Key,
-                Version = 1,
+                Version = m.Version,
                 AuditReference = m.AuditReference,
                 Sender = m.Sender,
                 Subject = m.Subject,

@@ -38,7 +38,10 @@ public sealed record PortalStep(
     PortalContact? Contact,
     IReadOnlyList<PortalMessageLink> Messages,
     DateTimeOffset? CompletedAt,
-    PortalBooking? Booking);
+    PortalBooking? Booking,
+    PortalI9Choice? I9Choice = null,
+    PortalRepresentative? Representative = null,
+    PortalAtiNumber? AtiNumber = null);
 
 public sealed record PortalView(
     string FirstName,
@@ -55,7 +58,8 @@ public sealed record PortalMessage(int Id, string Subject, DateTimeOffset SentAt
 /// session and reads nothing that belongs to anyone else (AGENTS.md, invariant 2). No staff notes,
 /// no internal statuses, no skipped steps.
 /// </summary>
-public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTokens tokens, MessageService messages, SchedulingService scheduling)
+public sealed class PortalService(
+    AppDbContext db, TimeProvider clock, PortalTokens tokens, MessageService messages, SchedulingService scheduling, PortalAnswers answers)
 {
     public async Task<PortalView?> GetViewAsync(int candidateId, CancellationToken ct = default)
     {
@@ -71,6 +75,7 @@ public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTok
             .ToListAsync(ct);
         var now = clock.GetUtcNow();
         var bookings = await scheduling.GetPortalBookingsAsync(candidateId, ct);
+        var asks = await answers.GetViewsAsync(candidate, ct);
 
         var steps = candidate.Steps
             .Where(s => s.Status != StepStatus.Skipped)
@@ -100,7 +105,10 @@ public sealed class PortalService(AppDbContext db, TimeProvider clock, PortalTok
                     ContactFor(candidate, d.Owner),
                     sent.Where(m => keys.Contains(m.MessageKey)).Select(m => new PortalMessageLink(m.Id, m.Subject, m.SentAt)).ToList(),
                     state == PortalStepState.Done ? s.CompletedAt : null,
-                    bookings.GetValueOrDefault(d.Key));
+                    bookings.GetValueOrDefault(d.Key),
+                    d.Key == PortalAnswers.I9Step ? asks.I9Choice : null,
+                    d.Key == PortalAnswers.RemoteI9Step ? asks.Representative : null,
+                    d.Key == PortalAnswers.FingerprintingStep ? asks.AtiNumber : null);
             })
             .ToList();
 

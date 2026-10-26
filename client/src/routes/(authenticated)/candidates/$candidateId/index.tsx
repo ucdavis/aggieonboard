@@ -135,6 +135,21 @@ function CandidatePage() {
                 <dd>{candidate.employeeId ?? '—'}</dd>
                 <dt className="text-base-content/60">I-9</dt>
                 <dd>{i9Label[candidate.i9Method]}</dd>
+                {candidate.i9RepresentativeName && (
+                  <>
+                    <dt className="text-base-content/60">I-9 representative</dt>
+                    <dd>
+                      {candidate.i9RepresentativeName} (
+                      {candidate.i9RepresentativeEmail})
+                    </dd>
+                  </>
+                )}
+                {candidate.fingerprintAtiNumber && (
+                  <>
+                    <dt className="text-base-content/60">ATI number</dt>
+                    <dd>{candidate.fingerprintAtiNumber}</dd>
+                  </>
+                )}
                 <dt className="text-base-content/60">Hiring manager</dt>
                 <dd>{candidate.hiringManagerContact ?? '—'}</dd>
               </dl>

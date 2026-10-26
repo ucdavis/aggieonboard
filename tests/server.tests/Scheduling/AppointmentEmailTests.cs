@@ -93,7 +93,7 @@ public class AppointmentEmailTests : IAsyncLifetime
 
         var options = (await Scheduling().GetOptionsAsync(casey.Id, "i9-in-person", new(2026, 10, 22), new(2026, 11, 5), forCandidate: true))!;
 
-        options.Unavailable.Should().StartWith("You can book In-person I-9 verification once we ask you to.");
+        options.Unavailable.Should().Be("You chose remote verification. To verify in person instead, contact your onboarding specialist.");
         (await Scheduling().GetPortalBookingsAsync(casey.Id)).Should().NotContainKey("i9");
     }
 

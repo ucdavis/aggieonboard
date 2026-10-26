@@ -12,6 +12,11 @@ import {
 } from '@/queries/portal.ts';
 import { PortalFrame } from '@/shared/portal/PortalFrame.tsx';
 import { SignedOut } from '@/shared/portal/SignedOut.tsx';
+import {
+  AtiNumberForm,
+  I9Choice,
+  RepresentativeForm,
+} from '@/shared/portal/StepAnswers.tsx';
 import { StepBooking } from '@/shared/portal/StepBooking.tsx';
 
 export const Route = createFileRoute('/portal/')({
@@ -166,7 +171,24 @@ function StepCard({
             {formatDue(step.dueDate, step.dueTime)}
           </p>
         )}
-        {step.booking && <StepBooking booking={step.booking} onDone={onDone} />}
+        {step.i9Choice ? (
+          <I9Choice
+            booking={step.booking}
+            choice={step.i9Choice}
+            onDone={onDone}
+          />
+        ) : (
+          step.booking && <StepBooking booking={step.booking} onDone={onDone} />
+        )}
+        {step.representative && (
+          <RepresentativeForm
+            onDone={onDone}
+            representative={step.representative}
+          />
+        )}
+        {step.atiNumber && (
+          <AtiNumberForm atiNumber={step.atiNumber} onDone={onDone} />
+        )}
         {step.watchFor && (
           <div className="rounded-box bg-base-200 p-3 text-sm">
             <p>

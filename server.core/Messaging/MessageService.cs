@@ -107,7 +107,8 @@ public sealed class MessageService(
     /// the move stands, the history says why the message did not, and the returned notice tells the
     /// staff member who made the move.
     /// </summary>
-    public async Task<string?> SendAutomaticAsync(int candidateId, string key, StaffMember sender, CancellationToken ct = default)
+    public async Task<string?> SendAutomaticAsync(
+        int candidateId, string key, StaffMember sender, CancellationToken ct = default, string? actorName = null)
     {
         var draft = await DraftAsync(candidateId, key, sender, clock.GetUtcNow(), ct);
         if (draft is null) return null;
@@ -121,7 +122,7 @@ public sealed class MessageService(
         {
             try
             {
-                await DeliverAndRecordAsync(draft, sender, automatic: true, ct);
+                await DeliverAndRecordAsync(draft, sender, automatic: true, ct, actorName);
                 return $"Message {draft.Template.AuditReference} (“{draft.Rendered.Subject}”) was sent to {draft.Candidate.Email}.";
             }
             catch (MessageDeliveryException ex)
@@ -130,10 +131,18 @@ public sealed class MessageService(
             }
         }
 
-        Audit(draft.Candidate.Id, sender, "message.not-sent", notice);
+        Audit(draft.Candidate.Id, sender, "message.not-sent", notice, actorName);
         await db.SaveChangesAsync(ct);
         return notice;
     }
+
+    /// <summary>
+    /// Sends because of the candidate's answer in the portal (choosing remote I-9 sends 11B). Signed by
+    /// their assigned staff, as <see cref="SendAutomaticAsync"/>: it never throws, and the history says
+    /// whether it went.
+    /// </summary>
+    public async Task<string?> SendOnCandidateAnswerAsync(int candidateId, string key, CancellationToken ct = default) =>
+        await SendAutomaticAsync(candidateId, key, await AssignedSenderAsync(candidateId, ct), ct, actorName: "Candidate");
 
     /// <summary>
     /// Emails the candidate about an appointment: booked, changed (<paramref name="previousStart"/> is the

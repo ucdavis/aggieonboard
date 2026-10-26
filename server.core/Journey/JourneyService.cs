@@ -189,6 +189,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         candidate.RequiresPositionDescription = input.Requirements.PositionDescription;
         candidate.EligibleForParking = input.Requirements.Parking;
         candidate.I9Method = input.I9Method;
+        candidate.I9RepresentativeName = Blank(input.I9RepresentativeName);
+        candidate.I9RepresentativeEmail = Blank(input.I9RepresentativeEmail);
+        candidate.FingerprintAtiNumber = CandidateAnswers.NormalizeAtiNumber(input.FingerprintAtiNumber);
 
         candidate.Qualifications.Clear();
         foreach (var q in input.Qualifications)
@@ -222,6 +225,8 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         ["Position description"] = YesNo(c.RequiresPositionDescription),
         ["Parking"] = YesNo(c.EligibleForParking),
         ["I-9 method"] = c.I9Method.ToString(),
+        ["I-9 representative"] = c.I9RepresentativeName is null ? null : $"{c.I9RepresentativeName} ({c.I9RepresentativeEmail})",
+        ["ATI number"] = c.FingerprintAtiNumber,
         ["Qualifications"] = string.Join(", ", c.Qualifications.Select(q => q.Name)),
     };
 
@@ -251,6 +256,9 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         }
         if (input.EmployeeId?.Trim().Length > 20) Error("employeeId", "Employee ID must be 20 characters or fewer.");
         if (input.HiringManagerContact?.Trim().Length > 500) Error("hiringManagerContact", "Hiring manager contact must be 500 characters or fewer.");
+        CandidateAnswers.ValidateRepresentative(
+            input.I9RepresentativeName, input.I9RepresentativeEmail, Error, "i9RepresentativeName", "i9RepresentativeEmail");
+        CandidateAnswers.ValidateAtiNumber(CandidateAnswers.NormalizeAtiNumber(input.FingerprintAtiNumber), Error, "fingerprintAtiNumber");
 
         for (var i = 0; i < input.Qualifications.Count; i++)
         {
@@ -331,7 +339,7 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
             Summary(c.RecruitingAssistant), Summary(c.Recruiter), Summary(c.OnboardingSpecialist),
             new CandidateRequirements(
                 c.RequiresDrugScreen, c.RequiresDmvPullNotice, c.RequiresFingerprinting, c.RequiresPositionDescription, c.EligibleForParking),
-            c.I9Method,
+            c.I9Method, c.I9RepresentativeName, c.I9RepresentativeEmail, c.FingerprintAtiNumber,
             c.Qualifications.OrderBy(q => q.Id).Select(q => new QualificationInput(q.Kind, q.Name, q.DocumentToSubmit)).ToList(),
             c.Steps.OrderBy(s => s.Step!.Order).Select(s => new StepDetail(
                 s.Step!.Key, s.Step.Order, s.Step.AuditReference, s.Step.Title, s.Step.Phase, s.Step.Owner, s.Step.Condition,

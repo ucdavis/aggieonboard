@@ -91,7 +91,7 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock, Messa
         var window = await WindowAsync(candidate, type, ct);
         var current = await Appointments().FirstOrDefaultAsync(a => a.CandidateId == candidateId && a.AppointmentTypeId == type.Id && a.Status == AppointmentStatus.Booked, ct);
         var unavailable = !Applies(candidate, type) ? $"{type.Name} doesn't apply to {candidate.FirstName}."
-            : forCandidate && !OpenToCandidate(candidate, type, StepFor(candidate, type)) ? NotYetOpen(type)
+            : forCandidate && !OpenToCandidate(candidate, type, StepFor(candidate, type)) ? NotOpen(candidate, type)
             : window.Unavailable;
 
         var locations = new List<LocationSlots>();
@@ -220,7 +220,7 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock, Messa
         var location = type.Locations.SingleOrDefault(l => l.Id == locationId && l.IsActive)
             ?? throw new JourneyRuleException($"That location doesn't offer {type.Name}.");
         if (!Applies(candidate, type)) throw new JourneyRuleException($"{type.Name} doesn't apply to {candidate.FirstName}.");
-        if (actor.IsCandidate && !OpenToCandidate(candidate, type, StepFor(candidate, type))) throw new JourneyRuleException(NotYetOpen(type));
+        if (actor.IsCandidate && !OpenToCandidate(candidate, type, StepFor(candidate, type))) throw new JourneyRuleException(NotOpen(candidate, type));
 
         var window = await WindowAsync(candidate, type, ct);
         if (window.Unavailable is { } why) throw new JourneyRuleException(why);
@@ -484,14 +484,16 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock, Messa
     /// <summary>
     /// A candidate books only a step they've been asked to do (action needed), or changes one already
     /// booked (waiting). Staff may book ahead; booking starts the step. Step 8: a candidate who chose a
-    /// remote I-9 isn't offered the in-person desk here; choosing between them arrives in 5c.
+    /// remote I-9 isn't offered the in-person desk; the choice is <see cref="Portal.PortalAnswers"/>, and only staff undo it.
     /// </summary>
     private static bool OpenToCandidate(Candidate candidate, AppointmentType type, CandidateStep step) =>
         step.Status is StepStatus.ActionNeeded or StepStatus.Waiting
         && !(type.StepKey == "i9" && candidate.I9Method == I9Method.Remote);
 
-    private static string NotYetOpen(AppointmentType type) =>
-        $"You can book {type.Name} once we ask you to. We'll email you when it's time.";
+    private static string NotOpen(Candidate candidate, AppointmentType type) =>
+        type.StepKey == "i9" && candidate.I9Method == I9Method.Remote
+            ? "You chose remote verification. To verify in person instead, contact your onboarding specialist."
+            : $"You can book {type.Name} once we ask you to. We'll email you when it's time.";
 
     private static bool Applies(Candidate candidate, AppointmentType type) =>
         candidate.Steps.FirstOrDefault(s => s.Step!.Key == type.StepKey) is { Status: not StepStatus.Skipped };

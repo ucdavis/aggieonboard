@@ -4,8 +4,8 @@ using Server.Core.Domain;
 namespace Server.Core.Messaging;
 
 /// <summary>
-/// A message template as a Markdown file: front matter (key, audit, sender, subject), then the
-/// body. A run of the body between <c>&lt;!-- if: Condition --&gt;</c> and <c>&lt;!-- end --&gt;</c>
+/// A message template as a Markdown file: front matter (key, audit, sender, subject, and optionally
+/// version, 1 when absent), then the body. A run of the body between <c>&lt;!-- if: Condition --&gt;</c> and <c>&lt;!-- end --&gt;</c>
 /// is a conditional section; everything else is always included. This is how the audit's wording
 /// is kept readable in the repository and seeded verbatim.
 /// </summary>
@@ -14,7 +14,8 @@ public sealed partial record MessageTemplateFile(
     string AuditReference,
     MessageSender Sender,
     string Subject,
-    IReadOnlyList<MessageTemplateFile.Section> Sections)
+    IReadOnlyList<MessageTemplateFile.Section> Sections,
+    int Version = 1)
 {
     public sealed record Section(CandidateCondition Condition, string Body);
 
@@ -38,12 +39,19 @@ public sealed partial record MessageTemplateFile(
             throw new FormatException($"{name}: unknown sender '{fields["sender"]}'.");
         }
 
+        var version = 1;
+        if (fields.TryGetValue("version", out var v) && (!int.TryParse(v, out version) || version < 1))
+        {
+            throw new FormatException($"{name}: version must be a whole number from 1.");
+        }
+
         return new MessageTemplateFile(
             Required("key"),
             Required("audit"),
             sender,
             Required("subject"),
-            ParseSections(text[front.Length..], name));
+            ParseSections(text[front.Length..], name),
+            version);
     }
 
     private static List<Section> ParseSections(string body, string name)
