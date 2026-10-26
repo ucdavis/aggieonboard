@@ -9,9 +9,10 @@ const sections = [
   { label: 'Templates', to: '/admin/templates' },
   { label: 'Settings', to: '/admin/settings' },
   { label: 'Staff', to: '/admin/staff' },
+  { label: 'History', to: '/admin/history' },
 ] as const;
 
-/** Admin pages: templates, settings and holidays, staff. The API refuses anyone else; this only says so. */
+/** Admin pages: templates, settings and holidays, staff, and their history. The API refuses anyone else; this only says so. */
 function AdminLayout() {
   const user = useUser();
   if (!user.roles.includes('Admin')) {
