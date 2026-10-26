@@ -23,7 +23,7 @@ export function I9Choice({
 }: {
   booking: PortalBooking | null;
   choice: PortalI9Choice;
-  onDone: (message: string) => void;
+  onDone: (message: string, outcome?: 'booked' | 'cancelled') => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const remote = useChooseRemoteI9();

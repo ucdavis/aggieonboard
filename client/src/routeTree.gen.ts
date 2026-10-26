@@ -23,6 +23,7 @@ import { Route as authenticatedAdminStaffRouteImport } from './routes/(authentic
 import { Route as authenticatedCandidatesNewRouteImport } from './routes/(authenticated)/candidates/new';
 import { Route as authenticatedScheduleIndexRouteImport } from './routes/(authenticated)/schedule/index';
 import { Route as PortalMessagesMessageIdRouteImport } from './routes/portal/messages/$messageId';
+import { Route as PortalTasksTaskKeyRouteImport } from './routes/portal/tasks/$taskKey';
 import { Route as authenticatedAdminTemplatesIndexRouteImport } from './routes/(authenticated)/admin/templates/index';
 import { Route as authenticatedAdminTemplatesTemplateKeyRouteImport } from './routes/(authenticated)/admin/templates/$templateKey';
 import { Route as authenticatedCandidatesCandidateIdIndexRouteImport } from './routes/(authenticated)/candidates/$candidateId/index';
@@ -103,6 +104,11 @@ const PortalMessagesMessageIdRoute = PortalMessagesMessageIdRouteImport.update({
   path: '/portal/messages/$messageId',
   getParentRoute: () => rootRouteImport,
 } as any);
+const PortalTasksTaskKeyRoute = PortalTasksTaskKeyRouteImport.update({
+  id: '/portal/tasks/$taskKey',
+  path: '/portal/tasks/$taskKey',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const authenticatedAdminTemplatesIndexRoute =
   authenticatedAdminTemplatesIndexRouteImport.update({
     id: '/templates/',
@@ -146,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/admin/staff': typeof authenticatedAdminStaffRoute;
   '/candidates/new': typeof authenticatedCandidatesNewRoute;
   '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute;
+  '/portal/tasks/$taskKey': typeof PortalTasksTaskKeyRoute;
   '/admin/': typeof authenticatedAdminIndexRoute;
   '/schedule/': typeof authenticatedScheduleIndexRoute;
   '/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute;
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/admin/staff': typeof authenticatedAdminStaffRoute;
   '/candidates/new': typeof authenticatedCandidatesNewRoute;
   '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute;
+  '/portal/tasks/$taskKey': typeof PortalTasksTaskKeyRoute;
   '/admin': typeof authenticatedAdminIndexRoute;
   '/schedule': typeof authenticatedScheduleIndexRoute;
   '/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute;
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/(authenticated)/admin/staff': typeof authenticatedAdminStaffRoute;
   '/(authenticated)/candidates/new': typeof authenticatedCandidatesNewRoute;
   '/portal/messages/$messageId': typeof PortalMessagesMessageIdRoute;
+  '/portal/tasks/$taskKey': typeof PortalTasksTaskKeyRoute;
   '/(authenticated)/admin/': typeof authenticatedAdminIndexRoute;
   '/(authenticated)/schedule/': typeof authenticatedScheduleIndexRoute;
   '/(authenticated)/admin/templates/$templateKey': typeof authenticatedAdminTemplatesTemplateKeyRoute;
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/admin/staff'
     | '/candidates/new'
     | '/portal/messages/$messageId'
+    | '/portal/tasks/$taskKey'
     | '/admin/'
     | '/schedule/'
     | '/admin/templates/$templateKey'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/admin/staff'
     | '/candidates/new'
     | '/portal/messages/$messageId'
+    | '/portal/tasks/$taskKey'
     | '/admin'
     | '/schedule'
     | '/admin/templates/$templateKey'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/(authenticated)/admin/staff'
     | '/(authenticated)/candidates/new'
     | '/portal/messages/$messageId'
+    | '/portal/tasks/$taskKey'
     | '/(authenticated)/admin/'
     | '/(authenticated)/schedule/'
     | '/(authenticated)/admin/templates/$templateKey'
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   PortalLinkRoute: typeof PortalLinkRoute;
   PortalIndexRoute: typeof PortalIndexRoute;
   PortalMessagesMessageIdRoute: typeof PortalMessagesMessageIdRoute;
+  PortalTasksTaskKeyRoute: typeof PortalTasksTaskKeyRoute;
 }
 
 declare module '@tanstack/react-router' {
@@ -366,6 +379,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PortalMessagesMessageIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/portal/tasks/$taskKey': {
+      id: '/portal/tasks/$taskKey';
+      path: '/portal/tasks/$taskKey';
+      fullPath: '/portal/tasks/$taskKey';
+      preLoaderRoute: typeof PortalTasksTaskKeyRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/(authenticated)/admin/templates/': {
       id: '/(authenticated)/admin/templates/';
       path: '/templates';
@@ -464,6 +484,7 @@ const rootRouteChildren: RootRouteChildren = {
   PortalLinkRoute: PortalLinkRoute,
   PortalIndexRoute: PortalIndexRoute,
   PortalMessagesMessageIdRoute: PortalMessagesMessageIdRoute,
+  PortalTasksTaskKeyRoute: PortalTasksTaskKeyRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

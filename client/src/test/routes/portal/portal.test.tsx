@@ -18,16 +18,21 @@ const portalStep = (overrides: Partial<PortalStep> = {}): PortalStep => ({
   atiNumber: null,
   booking: null,
   completedAt: null,
-  contact: { details: 'pat.kim@example.test or 916-555-0142', name: 'Pat Kim' },
+  contact: null,
   dueDate: '2026-10-26',
   dueTime: '16:54:00',
   i9Choice: null,
   isOverdue: false,
   key: 'drug-screen',
+  kind: 'External',
   messages: [],
   phase: 'PreEmployment',
   representative: null,
+  stage: 5,
   state: 'ToDo',
+  summary:
+    'Complete your drug screen at a testing location and time that works for you.',
+  taskLabel: 'Complete your drug screen',
   title: 'Drug screen',
   watchFor: {
     fromAddress: 'noreply@questdiagnostics.com',
@@ -37,54 +42,55 @@ const portalStep = (overrides: Partial<PortalStep> = {}): PortalStep => ({
   ...overrides,
 });
 
-const view = (steps: PortalStep[]): PortalView => ({
+const dmv = (overrides: Partial<PortalStep> = {}) =>
+  portalStep({
+    dueDate: null,
+    dueTime: null,
+    key: 'dmv',
+    summary: null,
+    taskLabel: 'Complete the DMV Employer Pull Notice form',
+    title: 'DMV Employer Pull Notice',
+    watchFor: null,
+    ...overrides,
+  });
+
+const view = (steps: PortalStep[], done = 1): PortalView => ({
   anticipatedStartDate: '2026-11-19',
   clearanceDeadline: '2026-11-10',
+  contact: { details: 'pat.kim@example.test or 916-555-0142', name: 'Pat Kim' },
   department: 'Respiratory Care',
   firstName: 'Morgan',
   positionTitle: 'Respiratory Therapist',
   steps,
+  stepsDone: done,
+  stepsTotal: 12,
 });
 
-describe('candidate portal', () => {
-  it('shows what to do, by when, what to watch for and who to ask', async () => {
+/** A task page asks for the task's email text; most tests don't need any. */
+const taskBody = (html: string | null = null) =>
+  http.get('/api/portal/tasks/:key', ({ params }) =>
+    HttpResponse.json({ html, key: String(params.key) })
+  );
+
+describe('checklist', () => {
+  it('leads with the next step, then what else is open, what we are working on and what is done', async () => {
     server.use(
       http.get('/api/portal/me', () =>
         HttpResponse.json(
           view([
             portalStep({
-              messages: [
-                {
-                  id: 7,
-                  sentAt: '2026-10-22T16:00:00Z',
-                  subject: 'Your UC Davis Health pre-employment requirements',
-                },
-              ],
-            }),
-            portalStep({
-              contact: null,
-              dueDate: null,
-              dueTime: null,
-              key: 'background-check',
-              state: 'InProgress',
-              title: 'Background check',
-              watchFor: null,
-            }),
-            portalStep({
-              dueDate: null,
-              dueTime: null,
-              key: 'cleared',
-              state: 'Upcoming',
-              title: 'Cleared to start',
-              watchFor: null,
-            }),
-            portalStep({
               completedAt: '2026-10-01T16:00:00Z',
               key: 'references',
               state: 'Done',
-              title: 'Reference check',
-              watchFor: null,
+              taskLabel: 'Add your references',
             }),
+            portalStep({
+              key: 'background-check',
+              state: 'InProgress',
+              taskLabel: 'Complete your background check',
+            }),
+            portalStep(),
+            dmv(),
           ])
         )
       )
@@ -93,40 +99,37 @@ describe('candidate portal', () => {
     const { cleanup } = renderRoute({ initialPath: '/portal' });
     try {
       expect(
-        await screen.findByRole('heading', {
-          name: 'Your onboarding checklist',
-        })
+        await screen.findByRole('heading', { name: 'Welcome, Morgan' })
       ).toBeInTheDocument();
-      expect(screen.getByText('Thu, Nov 19, 2026')).toBeInTheDocument();
+      expect(screen.getByText('1 of 12 steps done')).toBeInTheDocument();
 
-      const toDo = screen.getByRole('region', { name: /To do/ });
+      const next = screen.getByRole('region', { name: 'Your next step' });
       expect(
-        within(toDo).getByText('Due Mon, Oct 26, 2026, 4:54 p.m.')
-      ).toBeInTheDocument();
-      expect(within(toDo).getByText('Quest Diagnostics')).toBeInTheDocument();
-      expect(
-        within(toDo).getByText(/“Your Drug Screen QPassport”/)
+        within(next).getByRole('heading', { name: 'Complete your drug screen' })
       ).toBeInTheDocument();
       expect(
-        within(toDo).getByText(
+        within(next).getByText('Due Mon, Oct 26, 2026, 4:54 p.m.')
+      ).toBeInTheDocument();
+      expect(
+        within(next).getByRole('link', {
+          name: 'Click here to complete your drug screen',
+        })
+      ).toHaveAttribute('href', '/portal/tasks/drug-screen');
+
+      expect(
+        screen.getByRole('region', { name: 'Also to do now' })
+      ).toHaveTextContent('Complete the DMV Employer Pull Notice form');
+      expect(
+        screen.getByRole('region', { name: "We're working on it" })
+      ).toHaveTextContent('Complete your background check');
+      expect(screen.getByText('Done (1)')).toBeInTheDocument();
+      expect(
+        screen.getByText(
           'Questions? Contact Pat Kim at pat.kim@example.test or 916-555-0142.'
         )
       ).toBeInTheDocument();
-      expect(
-        within(toDo).getByRole('link', {
-          name: 'Read our email: Your UC Davis Health pre-employment requirements',
-        })
-      ).toHaveAttribute('href', '/portal/messages/7');
-
-      const inProgress = screen.getByRole('region', { name: /In progress/ });
-      expect(
-        within(inProgress).getByText('Nothing to do right now')
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('region', { name: /Coming up/ })
-      ).toHaveTextContent('Cleared to start');
-      expect(screen.getByRole('region', { name: /Done/ })).toHaveTextContent(
-        'Reference check'
+      expect(document.body).not.toHaveTextContent(
+        /Quest Diagnostics|Watch for/
       );
     } finally {
       cleanup();
@@ -136,7 +139,7 @@ describe('candidate portal', () => {
   it("says so when there's nothing to do", async () => {
     server.use(
       http.get('/api/portal/me', () =>
-        HttpResponse.json(view([portalStep({ state: 'Done', watchFor: null })]))
+        HttpResponse.json(view([portalStep({ state: 'Done' })]))
       )
     );
 
@@ -209,6 +212,103 @@ describe('candidate portal', () => {
   });
 });
 
+describe('a task', () => {
+  it("shows the email's text, takes I've done this for a task done elsewhere, and returns with the next step", async () => {
+    let done = false;
+    server.use(
+      http.get('/api/portal/me', () =>
+        HttpResponse.json(
+          view(
+            done
+              ? [dmv({ state: 'InProgress' }), portalStep()]
+              : [dmv(), portalStep()]
+          )
+        )
+      ),
+      taskBody(
+        '<p>Hi Morgan,</p><p>Complete the <strong>DMV</strong> form.</p>'
+      ),
+      http.post('/api/portal/tasks/dmv/done', () => {
+        done = true;
+        return new HttpResponse(null, { status: 204 });
+      })
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    try {
+      await userEvent.click(
+        await screen.findByRole('link', {
+          name: 'Click here to complete the DMV Employer Pull Notice form',
+        })
+      );
+      expect(
+        await screen.findByRole('heading', {
+          name: 'Complete the DMV Employer Pull Notice form',
+        })
+      ).toBeInTheDocument();
+      expect(await screen.findByText('Hi Morgan,')).toBeInTheDocument();
+      expect(
+        screen.getByText('DMV', { selector: 'strong' })
+      ).toBeInTheDocument();
+
+      await userEvent.click(
+        screen.getByRole('button', {
+          name: 'Click here to complete the DMV Employer Pull Notice form',
+        })
+      );
+      expect(done).toBe(false);
+      await userEvent.click(
+        screen.getByRole('button', { name: "I've done this" })
+      );
+
+      expect(
+        await screen.findByText('Next up: Complete your drug screen.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Done: Complete the DMV Employer Pull Notice form.')
+      ).toBeInTheDocument();
+      expect(done).toBe(true);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('shows its summary when it has no email of its own', async () => {
+    server.use(
+      http.get('/api/portal/me', () => HttpResponse.json(view([portalStep()]))),
+      taskBody()
+    );
+
+    const { cleanup } = renderRoute({
+      initialPath: '/portal/tasks/drug-screen',
+    });
+    try {
+      expect(
+        await screen.findByText(
+          'Complete your drug screen at a testing location and time that works for you.'
+        )
+      ).toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+
+  it("says so for a step that hasn't opened", async () => {
+    server.use(
+      http.get('/api/portal/me', () => HttpResponse.json(view([portalStep()])))
+    );
+
+    const { cleanup } = renderRoute({ initialPath: '/portal/tasks/cleared' });
+    try {
+      expect(
+        await screen.findByText(/This step isn't open yet/)
+      ).toBeInTheDocument();
+    } finally {
+      cleanup();
+    }
+  });
+});
+
 const fingerprinting = (
   appointment: PortalAppointment | null,
   canBook = true
@@ -221,9 +321,11 @@ const fingerprinting = (
       typeName: 'Fingerprinting (Live Scan)',
     },
     key: 'fingerprinting',
+    kind: 'Schedule',
     state: appointment ? 'InProgress' : 'ToDo',
+    summary: null,
+    taskLabel: 'Schedule your fingerprinting',
     title: 'Fingerprinting (Live Scan)',
-    watchFor: null,
   });
 
 const appointment = (
@@ -264,13 +366,16 @@ const options: BookingOptions = {
   unavailable: null,
 };
 
-describe('booking from the checklist', () => {
-  it('books a time and shows it', async () => {
+describe('booking from a task', () => {
+  it('books a time and returns to the checklist', async () => {
     let booked: unknown = null;
     server.use(
       http.get('/api/portal/me', () =>
-        HttpResponse.json(view([fingerprinting(booked ? appointment() : null)]))
+        HttpResponse.json(
+          view([fingerprinting(booked ? appointment() : null), portalStep()])
+        )
       ),
+      taskBody(),
       http.get('/api/portal/appointments/fingerprinting/options', () =>
         HttpResponse.json(options)
       ),
@@ -280,7 +385,9 @@ describe('booking from the checklist', () => {
       })
     );
 
-    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    const { cleanup } = renderRoute({
+      initialPath: '/portal/tasks/fingerprinting',
+    });
     try {
       await userEvent.click(
         await screen.findByRole('button', {
@@ -300,27 +407,22 @@ describe('booking from the checklist', () => {
       );
 
       expect(
-        await screen.findByText(
-          "Your Fingerprinting (Live Scan) appointment is booked. We're emailing you the details."
-        )
+        await screen.findByText('Done: Schedule your fingerprinting.')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Next up: Complete your drug screen.')
       ).toBeInTheDocument();
       expect(booked).toEqual({
         locationId: 2,
         start: '2026-10-26T09:15:00',
         typeKey: 'fingerprinting',
       });
-      expect(
-        await screen.findByText('Mon, Oct 26, 2026, 9:15–9:30 a.m.')
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('button', { name: 'Change time' })
-      ).toBeInTheDocument();
     } finally {
       cleanup();
     }
   });
 
-  it('cancels after asking', async () => {
+  it('cancels after asking and stays to book again', async () => {
     let cancelled: string | null = null;
     server.use(
       http.get('/api/portal/me', () =>
@@ -328,13 +430,16 @@ describe('booking from the checklist', () => {
           view([fingerprinting(cancelled ? null : appointment())])
         )
       ),
+      taskBody(),
       http.post('/api/portal/appointments/:id/cancel', ({ params }) => {
         cancelled = String(params.id);
         return new HttpResponse(null, { status: 204 });
       })
     );
 
-    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    const { cleanup } = renderRoute({
+      initialPath: '/portal/tasks/fingerprinting',
+    });
     try {
       expect(
         await screen.findByText(
@@ -353,6 +458,11 @@ describe('booking from the checklist', () => {
           'Your Fingerprinting (Live Scan) appointment is cancelled.'
         )
       ).toBeInTheDocument();
+      expect(
+        await screen.findByRole('button', {
+          name: 'Book Fingerprinting (Live Scan)',
+        })
+      ).toBeInTheDocument();
       expect(cancelled).toBe('41');
     } finally {
       cleanup();
@@ -365,10 +475,13 @@ describe('booking from the checklist', () => {
         HttpResponse.json(
           view([fingerprinting(appointment({ canChange: false }), false)])
         )
-      )
+      ),
+      taskBody()
     );
 
-    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    const { cleanup } = renderRoute({
+      initialPath: '/portal/tasks/fingerprinting',
+    });
     try {
       expect(
         await screen.findByText(/reply to your confirmation email/)
@@ -399,7 +512,7 @@ describe('emailed link', () => {
       expect(redeemed).toEqual([]);
 
       await userEvent.click(button);
-      expect(await screen.findByText(/Hi Morgan/)).toBeInTheDocument();
+      expect(await screen.findByText(/Welcome, Morgan/)).toBeInTheDocument();
       expect(redeemed).toEqual([{ token: 'abc123' }]);
     } finally {
       cleanup();
@@ -438,7 +551,7 @@ describe('emailed link', () => {
   });
 });
 
-describe('answering in the checklist', () => {
+describe('answering in a task', () => {
   it('chooses remote I-9 verification after asking, with in person still offered until then', async () => {
     let remote = false;
     server.use(
@@ -458,19 +571,32 @@ describe('answering in the checklist', () => {
                 ? { canChoose: false, method: 'Remote' }
                 : { canChoose: true, method: 'NotChosen' },
               key: 'i9',
+              kind: 'I9',
               state: remote ? 'InProgress' : 'ToDo',
-              title: 'I-9 verification',
+              summary: null,
+              taskLabel: 'Complete your I-9',
             }),
+            ...(remote
+              ? [
+                  portalStep({
+                    key: 'i9-remote',
+                    kind: 'Representative',
+                    representative: { email: null, name: null },
+                    taskLabel: 'Name your I-9 representative',
+                  }),
+                ]
+              : []),
           ])
         )
       ),
+      taskBody(),
       http.post('/api/portal/i9/remote', () => {
         remote = true;
         return new HttpResponse(null, { status: 204 });
       })
     );
 
-    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    const { cleanup } = renderRoute({ initialPath: '/portal/tasks/i9' });
     try {
       expect(
         await screen.findByText("Choose how you'll verify your documents")
@@ -488,20 +614,9 @@ describe('answering in the checklist', () => {
       );
 
       expect(
-        await screen.findByText(
-          "You chose remote verification. We're emailing you the next steps."
-        )
+        await screen.findByText('Next up: Name your I-9 representative.')
       ).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          'You chose to verify your documents remotely, with an authorized representative.'
-        )
-      ).toBeInTheDocument();
-      expect(
-        screen.queryByRole('button', {
-          name: 'Book In-person I-9 verification',
-        })
-      ).not.toBeInTheDocument();
+      expect(remote).toBe(true);
     } finally {
       cleanup();
     }
@@ -516,13 +631,16 @@ describe('answering in the checklist', () => {
           view([
             portalStep({
               key: 'i9-remote',
+              kind: 'Representative',
               representative: saved ?? { email: null, name: null },
               state: saved ? 'InProgress' : 'ToDo',
-              title: 'Remote I-9 representative',
+              summary: null,
+              taskLabel: 'Name your I-9 representative',
             }),
           ])
         )
       ),
+      taskBody(),
       http.put('/api/portal/i9/representative', async ({ request }) => {
         const body = (await request.json()) as { email: string; name: string };
         sent.push(body);
@@ -542,7 +660,9 @@ describe('answering in the checklist', () => {
       })
     );
 
-    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    const { cleanup } = renderRoute({
+      initialPath: '/portal/tasks/i9-remote',
+    });
     try {
       await userEvent.type(
         await screen.findByLabelText('Full name'),
@@ -566,17 +686,9 @@ describe('answering in the checklist', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
       expect(
-        await screen.findByText(
-          "Thanks. We have your representative's details."
-        )
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText('Jesse Brooks (jesse@example.test)')
+        await screen.findByText('Done: Name your I-9 representative.')
       ).toBeInTheDocument();
       expect(sent).toHaveLength(2);
-      expect(
-        screen.getByRole('button', { name: 'Change' })
-      ).toBeInTheDocument();
     } finally {
       cleanup();
     }
@@ -588,23 +700,23 @@ describe('answering in the checklist', () => {
       http.get('/api/portal/me', () =>
         HttpResponse.json(
           view([
-            portalStep({
+            {
+              ...fingerprinting(appointment({ canChange: false }), false),
               atiNumber: { value: saved },
-              key: 'fingerprinting',
-              state: 'InProgress',
-              title: 'Fingerprinting (Live Scan)',
-              watchFor: null,
-            }),
+            },
           ])
         )
       ),
+      taskBody(),
       http.put('/api/portal/fingerprinting/ati', async ({ request }) => {
         saved = ((await request.json()) as { atiNumber: string }).atiNumber;
         return new HttpResponse(null, { status: 204 });
       })
     );
 
-    const { cleanup } = renderRoute({ initialPath: '/portal' });
+    const { cleanup } = renderRoute({
+      initialPath: '/portal/tasks/fingerprinting',
+    });
     try {
       await userEvent.type(
         await screen.findByLabelText('ATI number'),
@@ -613,10 +725,9 @@ describe('answering in the checklist', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
       expect(
-        await screen.findByText('Thanks. We have your ATI number.')
+        await screen.findByText('Done: Schedule your fingerprinting.')
       ).toBeInTheDocument();
       expect(saved).toBe('A1B2C3D4E5');
-      expect(screen.getByText('A1B2C3D4E5')).toBeInTheDocument();
     } finally {
       cleanup();
     }

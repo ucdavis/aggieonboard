@@ -43,6 +43,9 @@ export type PortalRepresentative = {
 /** Step 11: message 12's ATI number, once the fingerprinting appointment has happened. */
 export type PortalAtiNumber = { value: string | null };
 
+/** How a task is done: in another system for now (External), or right in the checklist. */
+export type PortalTaskKind = 'External' | 'Schedule' | 'I9' | 'Representative';
+
 export type PortalStep = {
   atiNumber: PortalAtiNumber | null;
   booking: PortalBooking | null;
@@ -53,10 +56,16 @@ export type PortalStep = {
   i9Choice: PortalI9Choice | null;
   isOverdue: boolean;
   key: string;
+  kind: PortalTaskKind;
   messages: { id: number; sentAt: string; subject: string }[];
   phase: JourneyPhase;
   representative: PortalRepresentative | null;
+  stage: number;
   state: PortalStepState;
+  /** What the portal says when the task has no email of its own. */
+  summary: string | null;
+  /** The button's words: "Schedule your fingerprinting". */
+  taskLabel: string;
   title: string;
   watchFor: {
     fromAddress: string | null;
@@ -68,10 +77,15 @@ export type PortalStep = {
 export type PortalView = {
   anticipatedStartDate: string | null;
   clearanceDeadline: string | null;
+  /** Who to ask right now: the owner of the first open step. */
+  contact: { details: string; name: string } | null;
   department: string;
   firstName: string;
   positionTitle: string;
+  /** Open and finished steps only; later stages appear as they open. */
   steps: PortalStep[];
+  stepsDone: number;
+  stepsTotal: number;
   /** The admin viewing this checklist (Admin → Emulate), read-only; absent for the candidate. */
   viewedBy?: string | null;
 };
@@ -90,6 +104,7 @@ export const portalKeys = {
   all: ['portal'] as const,
   me: () => ['portal', 'me'] as const,
   message: (id: number) => ['portal', 'messages', id] as const,
+  task: (key: string) => ['portal', 'tasks', key] as const,
 };
 
 export const portalQueryOptions = () =>
@@ -187,4 +202,22 @@ export const useSetAtiNumber = () =>
       '/api/portal/fingerprinting/ati',
       post({ atiNumber }, 'PUT')
     )
+  );
+
+/** A task's instructions: the text of its email, filled in, or null to show its summary. */
+export const portalTaskQueryOptions = (key: string) =>
+  queryOptions({
+    queryFn: () =>
+      fetchJson<{ html: string | null; key: string }>(
+        `/api/portal/tasks/${encodeURIComponent(key)}`,
+        portal
+      ),
+    queryKey: portalKeys.task(key),
+    retry: false,
+  });
+
+/** "I've done this", for a task done in another system. */
+export const useMarkTaskDone = () =>
+  usePortalChange((key: string) =>
+    fetchJson<void>(`/api/portal/tasks/${encodeURIComponent(key)}/done`, post())
   );

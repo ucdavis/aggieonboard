@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). In progress: the one-place redesign (see "Redesign: groups, stages, one place"); step 1 (sign-in page) and step 2 (staff groups) done. Then Phase 7 (hosting).**
+> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). In progress: the one-place redesign (see "Redesign: groups, stages, one place"); steps 1–5 done, next the staff timeline by group. Then Phase 7 (hosting).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -136,6 +136,14 @@ New wording the app needed (not in the audit), written by us and open to rewrite
   refusals "You can choose how to verify your documents once we ask you to…", "Cancel your in-person appointment first,
   then choose remote verification.", "You chose remote verification. To verify in person instead, contact your onboarding
   specialist." and "You can enter your ATI number after your fingerprinting appointment."
+- **The pull-along portal** (redesign step 5): each step's button label and, where a step has no email of its own,
+  its summary (`JourneyCatalog.Tasks`); "Welcome, {name}", "{n} of {m} steps done", "Your next step", "Click here to
+  {label}", "Also to do now", "We're working on it", "You've done your part. We'll let you know if we need anything
+  else.", "Done (n)", "More steps appear here as you finish these.", "Done: {task}. Next up: {task}."; the stand-in for
+  tasks in other systems ("This is where you'll complete it. In the finished checklist, this opens right here…",
+  "I've done this" / "Not yet"); and the new-steps email (`p6-new-tasks.md`: "Next steps in your UC Davis Health
+  onboarding", "You have new steps in your onboarding checklist: …"). The audit's messages, shown on task pages,
+  still name vendors in places ("the link sent to you by I-9 Tracker Complete").
 - **Portal labels**: "Your onboarding checklist", "To do / In progress / Coming up / Done", "Nothing to do right now",
   "You're all caught up. We'll email you when there's something to do.", "Watch for an email from … Check your spam or
   junk folder if you don't see it.", "Read our email: …", "Questions? Contact … at …", the Continue page ("For your
@@ -399,8 +407,18 @@ Steps: (1) ✅ sandbox sign-in names the groups and adds **New employee view**, 
 any staff member or any new employee's checklist (read-only: every change under `/api` is refused while it lasts, and
 each view is in the history); (2) ✅ roles become Recruiter, Service
 Channel and Unit HR (migration `StaffGroups` moves recruiting assistants into the recruiter slot and renames stored
-roles; message copy still says "onboarding specialist" and its fields keep their names); (3) stages and automatic
-opening; (4) emails held for an hour of inactivity; (5) the portal shows only the current stage; (6) the staff timeline.
+roles; message copy still says "onboarding specialist" and its fields keep their names); (3) ✅ stages and automatic
+opening (`JourneyFlow`: on candidate creation, edits, step moves and attendance; stages are 1 references, 2
+qualifications, 3 offer, 4 employee data form, 5 all of pre-employment, 6 cleared, 7 New Employee Welcome); (4) ✅
+emails held until the new employee has been away for `NewTaskEmailDelayMinutes` (60): one step that opened alone
+sends its own message, several send one "new steps" email listing them, and a task done first is never emailed
+(`NewTaskEmails`, run every 5 minutes by `NewTaskEmailJob`); (5) ✅ the portal pulls them along: a home page led by
+**Your next step** with a "Click here to …" button, then what else is open, what we're working on and what's done
+(later stages hidden, no vendor names), and a page per task showing that step's email text (or a summary) with the way
+to do it: booking, the I-9 choice, the representative and the ATI number happen right there; a task done in another
+system opens a stand-in and **I've done this** (it moves to waiting; staff confirm). Finishing returns home with
+"Done: … Next up: …". Verified on the sandbox: completing Taylor's employee data form opened stage 5, and with the
+delay at 0 one "Next steps" email listed its three tasks; (6) the staff timeline by group.
 
 **Phase 7: Pilot readiness.** Accessibility pass, `/security-review`, and Azure deploy via the template's
 GitHub Actions + Bicep. These need **user-only prerequisites**: a new Entra app registration (not

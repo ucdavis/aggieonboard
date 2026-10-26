@@ -23,7 +23,7 @@ export function StepBooking({
   onDone,
 }: {
   booking: PortalBooking;
-  onDone: (message: string) => void;
+  onDone: (message: string, outcome: 'booked' | 'cancelled') => void;
 }) {
   const [open, setOpen] = useState(false);
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -103,7 +103,10 @@ export function StepBooking({
               cancel.mutate(booked.id, {
                 onSuccess: () => {
                   setConfirmingCancel(false);
-                  onDone(`Your ${booking.typeName} appointment is cancelled.`);
+                  onDone(
+                    `Your ${booking.typeName} appointment is cancelled.`,
+                    'cancelled'
+                  );
                 },
               })
             }
@@ -137,7 +140,8 @@ export function StepBooking({
                 onSuccess: () => {
                   setOpen(false);
                   onDone(
-                    `Your ${booking.typeName} appointment is ${booked ? 'changed' : 'booked'}. We're emailing you the details.`
+                    `Your ${booking.typeName} appointment is ${booked ? 'changed' : 'booked'}. We're emailing you the details.`,
+                    'booked'
                   );
                 },
               }

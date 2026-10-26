@@ -82,6 +82,12 @@ reach parity with.
   `AppointmentReminders`, run by `server/Services/AppointmentReminderJob.cs` on one instance.
   Candidates book in the portal (`/api/portal/appointments`) only for a step that is action needed or
   waiting; `SchedulingService.GetPortalBookingsAsync` says what each step offers, and the portal shows exactly that.
+- The pull-along flow: `server.core/Journey/JourneyFlow.cs` opens the current stage (`StepDefinition.Stage`) after any
+  change that can finish one; call `JourneyFlow.Advance` from new code that completes or adds steps. Each opened step
+  gets a `TaskNotification`, emailed by `NewTaskEmails` only once the candidate has been away from the portal
+  (`Candidate.LastPortalActivityAt`, set by `PortalActivityAttribute`). The portal lists only open and finished steps;
+  `PortalStep.Kind` says how a task is done, and the task page shows the step's message via
+  `MessageService.RenderForStepAsync` (a shared message keeps only that step's section).
 - Candidate answers (the replies 11A, 11B and 12 used to ask for): `server.core/Portal/PortalAnswers.cs` decides what each
   step asks for and records the I-9 choice, the remote representative and the ATI number (`/api/portal/i9/*`,
   `/api/portal/fingerprinting/ati`). Staff enter the same answers on the candidate form; both use the checks in

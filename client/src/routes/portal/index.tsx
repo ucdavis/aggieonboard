@@ -1,45 +1,39 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { HttpError } from '@/lib/api.ts';
-import { formatDate, formatDue } from '@/lib/journey.ts';
+import { formatDate } from '@/lib/journey.ts';
 import {
   portalKeys,
   portalQueryOptions,
   type PortalStep,
-  type PortalStepState,
+  type PortalView,
   useSignOut,
 } from '@/queries/portal.ts';
 import { PortalFrame } from '@/shared/portal/PortalFrame.tsx';
 import { SignedOut } from '@/shared/portal/SignedOut.tsx';
-import {
-  AtiNumberForm,
-  I9Choice,
-  RepresentativeForm,
-} from '@/shared/portal/StepAnswers.tsx';
-import { StepBooking } from '@/shared/portal/StepBooking.tsx';
+import { Due, ViewedBy } from '@/shared/portal/TaskParts.tsx';
+import { callToAction } from '@/shared/portal/tasks.ts';
+
+type PortalSearch = { completed?: string };
 
 export const Route = createFileRoute('/portal/')({
   component: PortalPage,
+  validateSearch: (search: Record<string, unknown>): PortalSearch => ({
+    completed:
+      typeof search.completed === 'string' ? search.completed : undefined,
+  }),
 });
 
-const sections: { empty?: string; heading: string; state: PortalStepState }[] =
-  [
-    {
-      empty:
-        "You're all caught up. We'll email you when there's something to do.",
-      heading: 'To do',
-      state: 'ToDo',
-    },
-    { heading: 'In progress', state: 'InProgress' },
-    { heading: 'Coming up', state: 'Upcoming' },
-  ];
-
+/**
+ * The new employee's one place: the next thing to do, front and centre, with what else is open now
+ * below it. Finishing a task brings them back here with the next one waiting. Later stages stay
+ * out of sight until they open; nothing here names a vendor.
+ */
 function PortalPage() {
   const { data: view, error, isPending } = useQuery(portalQueryOptions());
+  const { completed } = Route.useSearch();
   const signOut = useSignOut();
   const queryClient = useQueryClient();
-  const [notice, setNotice] = useState<string | null>(null);
 
   if (error instanceof HttpError && error.status === 401) {
     return (
@@ -76,199 +70,198 @@ function PortalPage() {
           Your checklist couldn&apos;t be loaded. Refresh the page to try again.
         </div>
       ) : (
-        <div className="space-y-8">
-          {view.viewedBy && (
-            <div className="alert alert-warning" role="status">
-              <span>
-                You&apos;re viewing {view.firstName}&apos;s checklist as{' '}
-                {view.viewedBy}. Read-only.
-              </span>
-              <button
-                className="btn btn-sm"
-                disabled={signOut.isPending}
-                onClick={() =>
-                  signOut.mutate(undefined, {
-                    onSuccess: () => window.location.assign('/admin/emulate'),
-                  })
-                }
-                type="button"
-              >
-                Back to Admin
-              </button>
-            </div>
-          )}
-          {notice && (
-            <div className="alert alert-success" role="status">
-              <span>{notice}</span>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setNotice(null)}
-                type="button"
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Your onboarding checklist</h1>
-            <p className="text-lg">
-              Hi {view.firstName}. This is everything for your{' '}
-              <span className="font-semibold">{view.positionTitle}</span>{' '}
-              position with {view.department}, in one place.
-            </p>
-            {view.anticipatedStartDate && (
-              <dl className="grid gap-x-4 gap-y-1 rounded-box bg-base-100 p-4 sm:grid-cols-[auto_1fr]">
-                <dt className="font-medium">Anticipated start date</dt>
-                <dd>{formatDate(view.anticipatedStartDate)}</dd>
-                {view.clearanceDeadline && (
-                  <>
-                    <dt className="font-medium">Clearances complete by</dt>
-                    <dd>{formatDate(view.clearanceDeadline)}</dd>
-                  </>
-                )}
-              </dl>
-            )}
-          </div>
-
-          {sections.map(({ empty, heading, state }) => {
-            const steps = view.steps.filter((s) => s.state === state);
-            if (!steps.length && !empty) {
-              return null;
-            }
-            return (
-              <section
-                aria-labelledby={`${state}-heading`}
-                className="space-y-3"
-                key={state}
-              >
-                <h2 className="text-xl font-bold" id={`${state}-heading`}>
-                  {heading}
-                  {steps.length > 0 && (
-                    <span className="ml-2 text-base font-normal text-base-content/60">
-                      {steps.length}
-                    </span>
-                  )}
-                </h2>
-                {steps.length ? (
-                  <ul className="space-y-3">
-                    {steps.map((step) => (
-                      <StepCard key={step.key} onDone={setNotice} step={step} />
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="rounded-box bg-base-100 p-4">{empty}</p>
-                )}
-              </section>
-            );
-          })}
-
-          <DoneSection steps={view.steps.filter((s) => s.state === 'Done')} />
-        </div>
+        <Checklist completed={completed} view={view} />
       )}
     </PortalFrame>
   );
 }
 
-function StepCard({
-  onDone,
-  step,
+function Checklist({
+  completed,
+  view,
 }: {
-  onDone: (message: string) => void;
-  step: PortalStep;
+  completed?: string;
+  view: PortalView;
 }) {
+  const toDo = view.steps.filter((s) => s.state === 'ToDo');
+  const working = view.steps.filter((s) => s.state === 'InProgress');
+  const done = view.steps.filter((s) => s.state === 'Done');
+  const [next, ...alsoNow] = toDo;
+  const finished = view.steps.find((s) => s.key === completed);
+
   return (
-    <li className="card bg-base-100 shadow-sm">
-      <div className="card-body gap-3 p-4 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="text-lg font-semibold">{step.title}</h3>
-          {step.state === 'InProgress' && (
-            <span className="badge badge-info">Nothing to do right now</span>
-          )}
+    <div className="space-y-6">
+      <ViewedBy view={view} />
+
+      {finished && (
+        <div className="alert alert-success" role="status">
+          <span>
+            <span className="font-semibold">Done: {finished.taskLabel}.</span>{' '}
+            {next
+              ? `Next up: ${next.taskLabel}.`
+              : "That's everything for now. We'll email you when there's more."}
+          </span>
         </div>
-        {step.dueDate && step.state !== 'InProgress' && (
-          <p className={step.isOverdue ? 'font-semibold text-error' : ''}>
-            {step.isOverdue ? 'Past due: ' : 'Due '}
-            {formatDue(step.dueDate, step.dueTime)}
+      )}
+
+      <header className="space-y-3">
+        <h1 className="text-3xl font-bold">Welcome, {view.firstName}</h1>
+        <p className="text-lg">
+          Your onboarding for{' '}
+          <span className="font-semibold">{view.positionTitle}</span>,{' '}
+          {view.department}.
+        </p>
+        <Progress done={view.stepsDone} total={view.stepsTotal} />
+        {view.anticipatedStartDate && (
+          <p className="text-sm text-base-content/70">
+            Anticipated start date: {formatDate(view.anticipatedStartDate)}
           </p>
         )}
-        {step.i9Choice ? (
-          <I9Choice
-            booking={step.booking}
-            choice={step.i9Choice}
-            onDone={onDone}
-          />
-        ) : (
-          step.booking && <StepBooking booking={step.booking} onDone={onDone} />
-        )}
-        {step.representative && (
-          <RepresentativeForm
-            onDone={onDone}
-            representative={step.representative}
-          />
-        )}
-        {step.atiNumber && (
-          <AtiNumberForm atiNumber={step.atiNumber} onDone={onDone} />
-        )}
-        {step.watchFor && (
-          <div className="rounded-box bg-base-200 p-3 text-sm">
-            <p>
-              Watch for an email from{' '}
-              <span className="font-semibold">{step.watchFor.sender}</span>
-              {step.watchFor.fromAddress && <> ({step.watchFor.fromAddress})</>}
-              {step.watchFor.subject && (
-                <> with the subject “{step.watchFor.subject}”</>
-              )}
-              . Check your spam or junk folder if you don&apos;t see it.
-            </p>
-          </div>
-        )}
-        {step.messages.length > 0 && (
-          <ul className="space-y-1 text-sm">
-            {step.messages.map((m) => (
-              <li key={m.id}>
-                <Link
-                  className="link link-primary"
-                  params={{ messageId: String(m.id) }}
-                  to="/portal/messages/$messageId"
-                >
-                  Read our email: {m.subject}
-                </Link>
+      </header>
+
+      {next ? (
+        <NextStep step={next} />
+      ) : (
+        <section className="rounded-box bg-base-100 p-6 text-center shadow-sm">
+          <h2 className="text-xl font-bold">You&apos;re all caught up</h2>
+          <p className="mt-2">
+            {working.length > 0
+              ? "We're working on what you've done. We'll email you when there's something new to do."
+              : "We'll email you when there's something new to do."}
+          </p>
+        </section>
+      )}
+
+      {alsoNow.length > 0 && (
+        <section aria-labelledby="also-heading" className="space-y-3">
+          <h2 className="text-xl font-bold" id="also-heading">
+            Also to do now
+          </h2>
+          <ul className="space-y-2">
+            {alsoNow.map((step) => (
+              <li
+                className="flex flex-wrap items-center justify-between gap-3 rounded-box bg-base-100 p-4 shadow-sm"
+                key={step.key}
+              >
+                <div>
+                  <p className="font-semibold">{step.taskLabel}</p>
+                  <Due step={step} />
+                </div>
+                <TaskLink step={step} />
               </li>
             ))}
           </ul>
-        )}
-        {step.contact && (
-          <p className="text-sm text-base-content/80">
-            Questions? Contact {step.contact.name} at {step.contact.details}.
-          </p>
-        )}
-      </div>
-    </li>
+        </section>
+      )}
+
+      {working.length > 0 && (
+        <section aria-labelledby="working-heading" className="space-y-3">
+          <h2 className="text-xl font-bold" id="working-heading">
+            We&apos;re working on it
+          </h2>
+          <ul className="space-y-2">
+            {working.map((step) => (
+              <li
+                className="rounded-box bg-base-100 p-4 shadow-sm"
+                key={step.key}
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold">{step.taskLabel}</p>
+                  <Link
+                    aria-label={`View ${step.taskLabel}`}
+                    className="link link-primary text-sm"
+                    params={{ taskKey: step.key }}
+                    to="/portal/tasks/$taskKey"
+                  >
+                    View
+                  </Link>
+                </div>
+                <p className="text-sm text-base-content/70">
+                  You&apos;ve done your part. We&apos;ll let you know if we need
+                  anything else.
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {done.length > 0 && (
+        <details className="rounded-box bg-base-100 p-4 shadow-sm">
+          <summary className="cursor-pointer font-semibold">
+            Done ({done.length})
+          </summary>
+          <ul className="mt-2 space-y-1">
+            {done.map((step) => (
+              <li className="flex items-center gap-2" key={step.key}>
+                <span aria-hidden="true" className="text-success">
+                  ✓
+                </span>
+                {step.taskLabel}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      <p className="text-sm text-base-content/70">
+        More steps appear here as you finish these.
+      </p>
+      {view.contact && (
+        <p className="rounded-box bg-base-100 p-4 text-sm shadow-sm">
+          Questions? Contact {view.contact.name} at {view.contact.details}.
+        </p>
+      )}
+    </div>
   );
 }
 
-function DoneSection({ steps }: { steps: PortalStep[] }) {
-  if (!steps.length) {
+function Progress({ done, total }: { done: number; total: number }) {
+  if (total === 0) {
     return null;
   }
   return (
-    <section aria-labelledby="done-heading" className="space-y-3">
-      <h2 className="text-xl font-bold" id="done-heading">
-        Done
-        <span className="ml-2 text-base font-normal text-base-content/60">
-          {steps.length}
-        </span>
-      </h2>
-      <ul className="rounded-box bg-base-100 p-4">
-        {steps.map((step) => (
-          <li className="flex items-center gap-2 py-1" key={step.key}>
-            <span aria-hidden="true" className="text-success">
-              ✓
-            </span>
-            {step.title}
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-1">
+      <progress
+        aria-label="Onboarding progress"
+        className="progress progress-primary w-full"
+        max={total}
+        value={done}
+      />
+      <p className="text-sm">
+        {done} of {total} steps done
+      </p>
+    </div>
+  );
+}
+
+function NextStep({ step }: { step: PortalStep }) {
+  return (
+    <section
+      aria-labelledby="next-heading"
+      className="space-y-3 rounded-box border-l-4 border-primary bg-base-100 p-6 shadow-sm"
+    >
+      <p
+        className="text-sm font-semibold uppercase tracking-wide text-primary"
+        id="next-heading"
+      >
+        Your next step
+      </p>
+      <h2 className="text-2xl font-bold">{step.taskLabel}</h2>
+      <Due step={step} />
+      <TaskLink large step={step} />
     </section>
+  );
+}
+
+function TaskLink({ large, step }: { large?: boolean; step: PortalStep }) {
+  return (
+    <Link
+      className={`btn btn-primary ${large ? 'btn-lg w-full sm:w-auto' : 'btn-sm'}`}
+      params={{ taskKey: step.key }}
+      to="/portal/tasks/$taskKey"
+    >
+      {callToAction(step.taskLabel)}
+    </Link>
   );
 }
