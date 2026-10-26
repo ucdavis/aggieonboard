@@ -59,6 +59,10 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         await db.SaveChangesAsync(ct);
 
         await AuditAsync(candidate.Id, actor, "candidate.created", $"Created {candidate.FirstName} {candidate.LastName} for {candidate.PositionTitle}.", ct);
+
+        // The first stage (references) opens at once; its email waits for the new-step delay.
+        JourneyFlow.Advance(db, candidate, now, await DeadlinesAsync(ct), actor, actor.Name);
+        await db.SaveChangesAsync(ct);
         return (await GetCandidateAsync(candidate.Id, ct))!;
     }
 
@@ -80,7 +84,10 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         var after = Snapshot(candidate, NameOf);
 
         var changedSteps = CandidateJourney.ApplyConditions(candidate);
-        CandidateJourney.RecomputeDues(candidate, await DeadlinesAsync(ct));
+        var deadlines = await DeadlinesAsync(ct);
+        CandidateJourney.RecomputeDues(candidate, deadlines);
+        // A requirement added to the stage under way opens with it; one dropped may finish the stage.
+        JourneyFlow.Advance(db, candidate, clock.GetUtcNow(), deadlines, actor, actor.Name);
 
         var changes = before.Keys
             .Where(k => before[k] != after[k])
@@ -104,12 +111,19 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
         if (candidate is null || step is null) return null;
 
         var from = step.Status;
-        CandidateJourney.Apply(candidate, step, action, clock.GetUtcNow(), actor, await DeadlinesAsync(ct));
+        var deadlines = await DeadlinesAsync(ct);
+        CandidateJourney.Apply(candidate, step, action, clock.GetUtcNow(), actor, deadlines);
         await db.SaveChangesAsync(ct);
 
         var detail = $"{step.Step!.Title}: {CandidateJourney.Describe(from)} → {CandidateJourney.Describe(step.Status)}";
         if (!string.IsNullOrWhiteSpace(reason)) detail += $". {reason.Trim()}";
         await AuditAsync(candidate.Id, actor, $"step.{ActionName(action)}", detail, ct);
+
+        // Completing the last step of a stage opens the next one.
+        if (JourneyFlow.Advance(db, candidate, clock.GetUtcNow(), deadlines, actor, actor.Name).Count > 0)
+        {
+            await db.SaveChangesAsync(ct);
+        }
 
         // What the candidate sent has arrived: acknowledge it (message 5), or say why that couldn't happen.
         string? notice = null;

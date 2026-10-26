@@ -57,6 +57,9 @@ public static partial class MergeFields
         new("AppointmentPlace", "The location's name, and its address when there is one."),
         new("AppointmentChangeDeadline", "Until when the candidate can change or cancel it online."),
         new("PreviousAppointmentTime", "The time it moved from (the change email)."),
+
+        // New steps: only the new-steps email has them
+        new("NewTaskList", "Bulleted list of the steps that just opened in the checklist."),
     ];
 
     public static readonly IReadOnlySet<string> Names = All.Select(f => f.Name).ToHashSet(StringComparer.Ordinal);
@@ -66,6 +69,9 @@ public static partial class MergeFields
     {
         "AppointmentName", "AppointmentTime", "AppointmentPlace", "AppointmentChangeDeadline", "PreviousAppointmentTime",
     };
+
+    /// <summary>Fields only the new-steps email has a value for.</summary>
+    public static readonly IReadOnlySet<string> NewTasksOnly = new HashSet<string>(StringComparer.Ordinal) { "NewTaskList" };
 
     /// <summary>The distinct field names a piece of template text uses, in order of first use.</summary>
     public static IReadOnlyList<string> In(string text) =>

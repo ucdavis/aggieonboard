@@ -38,6 +38,21 @@ public class StepDefinition
     /// <summary>A vendor's email for this step, kept as communications' proposed wording; never sent by the app.</summary>
     public string? VendorMessageKey { get; set; }
 
+    /// <summary>
+    /// Steps with the same stage open together; the next stage opens on its own once every step of
+    /// this one is complete or skipped (JourneyFlow). Stage 5 is all of pre-employment.
+    /// </summary>
+    public int Stage { get; set; }
+
+    /// <summary>What the new employee is asked to do, as the portal's button says it: "Schedule your fingerprinting".</summary>
+    public string TaskLabel { get; set; } = "";
+
+    /// <summary>
+    /// What the portal says about the task when the step has no message of its own to show (a vendor
+    /// step, the offer, New Employee Welcome). Our wording, listed under Copy to review.
+    /// </summary>
+    public string? TaskSummary { get; set; }
+
     public DeadlineRule Deadline { get; set; } = DeadlineRule.None;
 
     /// <summary>

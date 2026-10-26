@@ -87,6 +87,11 @@ try
     {
         builder.Services.AddHostedService<AppointmentReminderJob>();
     }
+    builder.Services.AddScoped<NewTaskEmails>();
+    if (builder.Configuration.GetValue("Journey:SendNewTaskEmails", true))
+    {
+        builder.Services.AddHostedService<NewTaskEmailJob>();
+    }
     // add auth policies here
 
     // add db context (check secrets first, then config, then default)

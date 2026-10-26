@@ -170,6 +170,11 @@ public static class DevelopmentSeeder
             .Done("background-check", 40).Done("employee-health", 40).Done("i9", 35).Done("cleared", 10)
             .Active("new-employee-welcome", daysAgo: 7);
 
+        // As the app would have: every step of each candidate's current stage is open.
+        foreach (var candidate in new[] { alex, jordan, sam, taylor, morgan, casey, riley, avery })
+        {
+            JourneyFlow.OpenCurrentStage(candidate, now, deadlines);
+        }
         await db.SaveChangesAsync(ct);
 
         await SeedScheduleAsync(db, now, calendar, ct, learning, specialist, (casey, "fingerprinting", "health-pd"),

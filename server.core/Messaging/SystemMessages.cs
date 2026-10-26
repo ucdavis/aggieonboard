@@ -21,5 +21,8 @@ public static class SystemMessages
         AppointmentBooked, AppointmentChanged, AppointmentCancelled, AppointmentReminder,
     };
 
-    public static readonly IReadOnlySet<string> Keys = new HashSet<string>(Appointment) { PortalLink };
+    /// <summary>Sent when steps open on their own and the new employee hasn't been in their checklist (JourneyFlow).</summary>
+    public const string NewTasks = "new-tasks";
+
+    public static readonly IReadOnlySet<string> Keys = new HashSet<string>(Appointment) { PortalLink, NewTasks };
 }

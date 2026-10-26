@@ -173,15 +173,25 @@ public sealed partial class TemplateAdmin(AppDbContext db, TimeProvider clock, M
             {
                 Error(field, current.Sender == MessageSender.External
                     ? $"{{{{{name}}}}}: a vendor sends this message, so the app can't fill merge fields in it."
-                    : MergeFields.Names.Contains(name)
+                    : MergeFields.AppointmentOnly.Contains(name)
                         ? $"{{{{{name}}}}} only has a value in appointment emails."
-                        : $"{{{{{name}}}}} isn't a field the app can fill. Use one from the list.");
+                        : MergeFields.NewTasksOnly.Contains(name)
+                            ? $"{{{{{name}}}}} only has a value in the new-steps email."
+                            : $"{{{{{name}}}}} isn't a field the app can fill. Use one from the list.");
             }
             if (current.Sender == MessageSender.App)
             {
                 foreach (Match m in LeftoverPlaceholder().Matches(text))
                 {
                     Error(field, $"{m.Value} looks like a placeholder. Use a merge field, or give it a link: {m.Value}(https://…).");
+                }
+            }
+            foreach (Match link in LinkTarget().Matches(text))
+            {
+                var target = link.Groups[1].Value;
+                if (!(target.StartsWith("https://") || target.StartsWith("http://") || target.StartsWith("mailto:") || target.StartsWith("{{")))
+                {
+                    Error(field, $"Links must start with https://, http:// or mailto: ({target}).");
                 }
             }
             if (MalformedField().IsMatch(text))
@@ -220,8 +230,9 @@ public sealed partial class TemplateAdmin(AppDbContext db, TimeProvider clock, M
     /// </summary>
     private static IEnumerable<MergeFields.Field> FieldsFor(string key, MessageSender sender) =>
         sender == MessageSender.External ? []
-        : SystemMessages.Appointment.Contains(key) ? MergeFields.All
-        : MergeFields.All.Where(f => !MergeFields.AppointmentOnly.Contains(f.Name));
+        : MergeFields.All.Where(f =>
+            (!MergeFields.AppointmentOnly.Contains(f.Name) || SystemMessages.Appointment.Contains(key))
+            && (!MergeFields.NewTasksOnly.Contains(f.Name) || key == SystemMessages.NewTasks));
 
     private static MessageTemplate Unsaved(MessageTemplate current, string? subject, IReadOnlyList<TemplateSectionView>? sections) => new()
     {
@@ -271,6 +282,10 @@ public sealed partial class TemplateAdmin(AppDbContext db, TimeProvider clock, M
 
     [GeneratedRegex(@"\{\{(?!\s*[A-Za-z][A-Za-z0-9]*\s*\}\})")]
     private static partial Regex MalformedField();
+
+    // The page shows message bodies too, so a link can only go somewhere ordinary.
+    [GeneratedRegex(@"\]\(([^)\s]+)\)")]
+    private static partial Regex LinkTarget();
 
     [GeneratedRegex(@"<!--\s*(if:|end)")]
     private static partial Regex ConditionMarker();

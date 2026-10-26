@@ -19,7 +19,8 @@ public sealed record MergeContext(
     IReadOnlyDictionary<string, Due?> DueByStep,
     DateTimeOffset Now,
     int PortalLinkLifetimeDays = 14,
-    AppointmentFacts? Appointment = null);
+    AppointmentFacts? Appointment = null,
+    IReadOnlyList<string>? NewTasks = null);
 
 /// <summary>The appointment an appointment email is about. Times are Pacific wall-clock.</summary>
 public sealed record AppointmentFacts(
@@ -104,6 +105,11 @@ public static class MergeFieldResolver
             ["AppointmentChangeDeadline"] = new(a is null ? null : FormatDue(ToDue(a.ChangeCutoff)), onlyAppointments),
             ["PreviousAppointmentTime"] = new(a?.PreviousStart is { } previous ? FormatDue(ToDue(previous)) : null,
                 "Only the email for a changed appointment has an earlier time."),
+
+            ["NewTaskList"] = new(context.NewTasks is { Count: > 0 } tasks
+                    ? string.Join("\n", tasks.Select(t => $"- {MessageMarkdown.Escape(t)}"))
+                    : null,
+                "Only the new-steps email has a list; it is sent when steps open on their own."),
         };
     }
 

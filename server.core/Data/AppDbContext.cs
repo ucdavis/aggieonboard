@@ -18,6 +18,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Candidate> Candidates => Set<Candidate>();
     public DbSet<CandidateStep> CandidateSteps => Set<CandidateStep>();
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
+    public DbSet<TaskNotification> TaskNotifications => Set<TaskNotification>();
     public DbSet<SentMessage> SentMessages => Set<SentMessage>();
     public DbSet<CandidateAccessToken> CandidateAccessTokens => Set<CandidateAccessToken>();
     public DbSet<Team> Teams => Set<Team>();
@@ -49,6 +50,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.WatchForSender).HasMaxLength(NameLen);
             e.Property(x => x.WatchForFromAddress).HasMaxLength(EmailLen);
             e.Property(x => x.WatchForSubject).HasMaxLength(NameLen);
+            e.Property(x => x.TaskLabel).HasMaxLength(NameLen);
+            e.Property(x => x.TaskSummary).HasMaxLength(1000);
             e.OwnsOne(x => x.Deadline, d =>
             {
                 d.Property(r => r.Anchor).HasColumnName("DeadlineAnchor");
@@ -130,6 +133,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasOne(x => x.Step).WithMany().HasForeignKey(x => x.StepDefinitionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.CompletedBy).WithMany().HasForeignKey(x => x.CompletedById).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.StaffNote).HasMaxLength(2000);
+        });
+
+        modelBuilder.Entity<TaskNotification>(e =>
+        {
+            e.HasIndex(x => new { x.SettledAt, x.OpenedAt });
+            e.Property(x => x.Outcome).HasMaxLength(500);
+            e.HasOne<Candidate>().WithMany().HasForeignKey(x => x.CandidateId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.CandidateStep).WithMany().HasForeignKey(x => x.CandidateStepId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<AuditEvent>(e =>

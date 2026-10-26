@@ -58,6 +58,9 @@ public class Candidate
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? ArchivedAt { get; set; }
 
+    /// <summary>The candidate's last request to their checklist. A new task's email waits until they've been away a while.</summary>
+    public DateTimeOffset? LastPortalActivityAt { get; set; }
+
     public bool Meets(CandidateCondition condition) => condition switch
     {
         CandidateCondition.Always => true,

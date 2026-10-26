@@ -114,12 +114,12 @@ public class PortalTests : IAsyncLifetime
         var view = (await Portal().GetViewAsync(casey.Id))!;
 
         view.FirstName.Should().Be("Casey");
-        view.Steps.Should().HaveCount(15, "Casey has every requirement and a remote I-9");
+        view.Steps.Should().HaveCount(13, "Casey has every requirement and a remote I-9; the last two stages haven't opened");
         State("i9-remote").Should().Be(PortalStepState.ToDo);
         State("dmv").Should().Be(PortalStepState.InProgress, "waiting is with UC Davis Health");
         State("fingerprinting").Should().Be(PortalStepState.InProgress, "blocked is internal");
         State("parking").Should().Be(PortalStepState.Done);
-        State("cleared").Should().Be(PortalStepState.Upcoming);
+        view.Steps.Should().NotContain(s => s.Key == "cleared", "later stages stay out of sight until they open");
 
         var alex = (await Portal().GetViewAsync(await IdOf("Alex")))!;
         alex.Steps.Select(s => s.Key).Should().NotContain("drug-screen", "it doesn't apply to Alex");

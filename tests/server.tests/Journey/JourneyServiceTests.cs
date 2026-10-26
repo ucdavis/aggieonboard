@@ -89,7 +89,10 @@ public class JourneyServiceTests : IAsyncLifetime
         detail.Steps.Single(s => s.Key == "qualifications").Status.Should().Be(StepStatus.Upcoming);
         detail.Steps.Single(s => s.Key == "dmv").Status.Should().Be(StepStatus.Skipped);
         detail.Qualifications.Single().DocumentToSubmit.Should().Be(CandidateQualification.DegreeDocument);
-        detail.History.Should().ContainSingle().Which.ActorName.Should().Be("Sample User");
+        detail.History.Select(h => h.Action).Should().BeEquivalentTo("candidate.created", "step.activated");
+        detail.History.Should().OnlyContain(h => h.ActorName == "Sample User");
+        detail.Steps.Single(s => s.Key == "references").Status.Should().Be(StepStatus.ActionNeeded, "the first stage opens at once");
+        (await _db.TaskNotifications.CountAsync(n => n.CandidateId == detail.Id)).Should().Be(1, "its email waits for the new-step delay");
     }
 
     [Fact]

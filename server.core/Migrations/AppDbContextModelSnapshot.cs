@@ -268,6 +268,9 @@ namespace server.core.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<DateTimeOffset?>("LastPortalActivityAt")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<string>("PositionTitle")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -777,6 +780,18 @@ namespace server.core.Migrations
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
+                    b.Property<int>("Stage")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaskLabel")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("TaskSummary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -804,6 +819,41 @@ namespace server.core.Migrations
                         .IsUnique();
 
                     b.ToTable("StepDefinitions");
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.TaskNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CandidateStepId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("OpenedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset?>("SettledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CandidateId");
+
+                    b.HasIndex("CandidateStepId");
+
+                    b.HasIndex("SettledAt", "OpenedAt");
+
+                    b.ToTable("TaskNotifications");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.Team", b =>
@@ -1158,6 +1208,23 @@ namespace server.core.Migrations
 
                     b.Navigation("Deadline")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Server.Core.Domain.TaskNotification", b =>
+                {
+                    b.HasOne("Server.Core.Domain.Candidate", null)
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Server.Core.Domain.CandidateStep", "CandidateStep")
+                        .WithMany()
+                        .HasForeignKey("CandidateStepId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("CandidateStep");
                 });
 
             modelBuilder.Entity("Server.Core.Domain.TeamMembership", b =>

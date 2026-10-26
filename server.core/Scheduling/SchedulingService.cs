@@ -332,6 +332,7 @@ public sealed class SchedulingService(AppDbContext db, TimeProvider clock, Messa
         if (attended && type.CompletesStepOnAttendance && step.Status != StepStatus.Complete)
         {
             CandidateJourney.Complete(step, now, actor);
+            JourneyFlow.Advance(db, candidate, now, await JourneyData.LoadDeadlinesAsync(db, ct), actor, actor.Name);
         }
         else if (!attended && step.Status is StepStatus.Waiting or StepStatus.Complete)
         {

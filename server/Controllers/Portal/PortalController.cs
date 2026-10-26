@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.RateLimiting;
 using Server.Controllers.Staff;
 using Server.Core.Portal;
@@ -24,6 +26,7 @@ public sealed record AtiNumberRequest(string? AtiNumber);
 [Authorize(Policy = CandidateAuthentication.Policy)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [JourneyErrors]
+[PortalActivity]
 public class PortalController(PortalService portal, PortalTokens tokens, SchedulingService scheduling, PortalAnswers answers) : ControllerBase
 {
     /// <summary>The smallest time a link request takes, so its timing says nothing about whether the address is on file.</summary>
@@ -117,6 +120,19 @@ public class PortalController(PortalService portal, PortalTokens tokens, Schedul
             ? NotFound()
             : NoContent();
 
+    /// <summary>A task's instructions: the text of its email, filled in. 404 for a task that isn't open or done.</summary>
+    [HttpGet("tasks/{key}")]
+    public async Task<ActionResult<PortalTaskBody>> TaskBody(string key, CancellationToken ct) =>
+        await portal.GetTaskBodyAsync(CurrentCandidate, key, ct) is { } body ? body : NotFound();
+
+    /// <summary>"I've done this", for a task done in another system.</summary>
+    [HttpPost("tasks/{key}/done")]
+    public async Task<IActionResult> TaskDone(string key, CancellationToken ct)
+    {
+        await answers.MarkDoneAsync(CurrentCandidate, key, ct);
+        return NoContent();
+    }
+
     /// <summary>Message 11A's "Remote": starts the representative step and emails 11B. In person is booking.</summary>
     [HttpPost("i9/remote")]
     public async Task<IActionResult> ChooseRemoteI9(CancellationToken ct)
@@ -143,4 +159,27 @@ public class PortalController(PortalService portal, PortalTokens tokens, Schedul
 
     /// <summary>The policy guarantees the claim; this reads nothing else.</summary>
     private int CurrentCandidate => CandidateAuthentication.CandidateId(User)!.Value;
+}
+
+/// <summary>
+/// Notes when the candidate last used their checklist (not when an admin views it), so a newly
+/// opened task is emailed only once they've been away (NewTaskEmails). At most one write a minute.
+/// </summary>
+public sealed class PortalActivityAttribute : ActionFilterAttribute
+{
+    public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+    {
+        await next();
+
+        var user = context.HttpContext.User;
+        if (CandidateAuthentication.CandidateId(user) is not { } id || CandidateAuthentication.ViewedBy(user) is not null) return;
+
+        var services = context.HttpContext.RequestServices;
+        var db = services.GetRequiredService<Server.Core.Data.AppDbContext>();
+        var now = services.GetRequiredService<TimeProvider>().GetUtcNow();
+        var recent = now.AddMinutes(-1);
+        await db.Candidates
+            .Where(c => c.Id == id && (c.LastPortalActivityAt == null || c.LastPortalActivityAt < recent))
+            .ExecuteUpdateAsync(u => u.SetProperty(c => c.LastPortalActivityAt, now));
+    }
 }

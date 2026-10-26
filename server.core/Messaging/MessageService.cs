@@ -69,7 +69,8 @@ public sealed class MessageService(
     {
         var now = clock.GetUtcNow();
         var example = SystemMessages.Appointment.Contains(edit.Key) ? ExampleAppointment(now) : null;
-        return await ToPreviewAsync(await DraftAsync(candidateId, edit.Key, sender, now, ct, example, edit), sender, ct);
+        IReadOnlyList<string>? tasks = edit.Key == SystemMessages.NewTasks ? ["Example step", "Another example step"] : null;
+        return await ToPreviewAsync(await DraftAsync(candidateId, edit.Key, sender, now, ct, example, edit, tasks), sender, ct);
     }
 
     /// <summary>A stand-in appointment two days out, so the editor can show an appointment email filled in.</summary>
@@ -158,6 +159,77 @@ public sealed class MessageService(
         Audit(draft.Candidate.Id, sender, "message.not-sent", notice, actorName);
         await db.SaveChangesAsync(ct);
         return notice;
+    }
+
+    /// <summary>
+    /// The email for steps that opened on their own while the new employee was away (NewTaskEmails):
+    /// a step's own message, or the new-steps email listing <paramref name="newTasks"/>. Signed by the
+    /// candidate's person in <paramref name="owner"/>'s group. Never throws; the history says whether it went.
+    /// </summary>
+    public async Task<SendOutcome?> SendForOpenedStepsAsync(
+        int candidateId, string key, StaffRole owner, IReadOnlyList<string>? newTasks, CancellationToken ct = default)
+    {
+        var sender = await OwnerAsync(candidateId, owner, ct) ?? await AssignedSenderAsync(candidateId, ct);
+        var draft = await DraftAsync(candidateId, key, sender, clock.GetUtcNow(), ct, newTasks: newTasks);
+        if (draft is null) return null;
+
+        const string actor = "AggieOnboard (new step)";
+        string notice;
+        if (!draft.CanSend)
+        {
+            notice = $"The email about the new step{(newTasks is { Count: > 1 } ? "s" : "")} was not sent. {WhyNot(draft)} They're in the checklist; send a message from the step if needed.";
+        }
+        else
+        {
+            try
+            {
+                await DeliverAndRecordAsync(draft, sender, automatic: true, ct, actor);
+                return new SendOutcome(true, $"“{draft.Rendered.Subject}” was emailed to {draft.Candidate.Email}.");
+            }
+            catch (MessageDeliveryException ex)
+            {
+                notice = $"The email about the new steps was not sent: {ex.Message}";
+            }
+        }
+
+        Audit(draft.Candidate.Id, sender, "message.not-sent", notice, actor);
+        await db.SaveChangesAsync(ct);
+        return new SendOutcome(false, notice);
+    }
+
+    /// <summary>
+    /// A step's own message as the body of its task in the portal, filled in for the candidate and
+    /// signed by the step's group. A message shared by several steps (12) keeps only this step's part.
+    /// Null when the step has no message, or any field is missing: the portal shows the summary instead.
+    /// </summary>
+    public async Task<string?> RenderForStepAsync(int candidateId, StepDefinition step, CancellationToken ct = default)
+    {
+        if (step.RequestMessageKey is not { } key) return null;
+        var template = await db.MessageTemplates.Include(t => t.Sections)
+            .Where(t => t.Key == key).OrderByDescending(t => t.Version).FirstOrDefaultAsync(ct);
+        if (template is null) return null;
+
+        var ownSection = template.Sections.Any(s => s.Condition == step.Condition && s.Condition != CandidateCondition.Always);
+        var part = new MessageTemplate
+        {
+            Key = template.Key, Version = template.Version, AuditReference = template.AuditReference,
+            Sender = template.Sender, Subject = template.Subject,
+            Sections = template.Sections
+                .Where(s => !ownSection || s.Condition == CandidateCondition.Always || s.Condition == step.Condition)
+                .ToList(),
+        };
+        var sender = await OwnerAsync(candidateId, step.Owner, ct) ?? await AssignedSenderAsync(candidateId, ct);
+        var draft = await DraftAsync(candidateId, key, sender, clock.GetUtcNow(), ct, edit: part);
+        return draft is null || draft.Rendered.Missing.Count > 0 ? null : draft.Rendered.BodyHtml;
+    }
+
+    /// <summary>The candidate's active person in a group, if they have one.</summary>
+    private async Task<StaffMember?> OwnerAsync(int candidateId, StaffRole owner, CancellationToken ct)
+    {
+        var person = await db.Candidates.Where(c => c.Id == candidateId)
+            .Select(c => owner == StaffRole.Recruiter ? c.Recruiter : owner == StaffRole.UnitHr ? c.UnitHr : c.ServiceChannel)
+            .SingleOrDefaultAsync(ct);
+        return person is { IsActive: true } ? person : null;
     }
 
     /// <summary>
@@ -284,7 +356,7 @@ public sealed class MessageService(
 
     private async Task<Draft?> DraftAsync(
         int candidateId, string key, StaffMember sender, DateTimeOffset now, CancellationToken ct,
-        AppointmentFacts? appointment = null, MessageTemplate? edit = null)
+        AppointmentFacts? appointment = null, MessageTemplate? edit = null, IReadOnlyList<string>? newTasks = null)
     {
         var candidate = await JourneyData.CandidatesWithJourney(db).SingleOrDefaultAsync(c => c.Id == candidateId, ct);
         var template = edit ?? await db.MessageTemplates
@@ -314,7 +386,7 @@ public sealed class MessageService(
                 : (Due?)null);
 
         var fields = MergeFieldResolver.Resolve(
-            new MergeContext(candidate, sender, settings, deadlines, dueByStep, now, portal.Value.LinkLifetimeDays, appointment));
+            new MergeContext(candidate, sender, settings, deadlines, dueByStep, now, portal.Value.LinkLifetimeDays, appointment, newTasks));
         var rendered = MessageRenderer.Render(template, candidate, fields);
 
         var blockers = new List<string>();
@@ -326,6 +398,10 @@ public sealed class MessageService(
         else if (steps.Count > 0 && applicable.Count == 0)
         {
             blockers.Add($"This message is for {string.Join(", ", steps.Select(s => s.Step!.Title))}, which {(steps.Count == 1 ? "doesn't" : "don't")} apply to {candidate.FirstName}.");
+        }
+        if (key == SystemMessages.NewTasks && newTasks is null)
+        {
+            blockers.Add("The new-steps email is sent by the checklist when steps open and the new employee hasn't been in to see them.");
         }
         if (SystemMessages.Appointment.Contains(key) && appointment is null)
         {

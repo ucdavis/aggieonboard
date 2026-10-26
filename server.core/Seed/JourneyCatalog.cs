@@ -11,7 +11,48 @@ namespace Server.Core.Seed;
 /// </summary>
 public static class JourneyCatalog
 {
-    public static IReadOnlyList<StepDefinition> Steps() =>
+    public static IReadOnlyList<StepDefinition> Steps()
+    {
+        var steps = Definitions();
+        foreach (var step in steps)
+        {
+            var task = Tasks[step.Key];
+            (step.Stage, step.TaskLabel, step.TaskSummary) = (task.Stage, task.Label, task.Summary);
+        }
+        return steps;
+    }
+
+    /// <summary>
+    /// How each step appears to the new employee, and when it opens (decided 2026-10-26). Labels and
+    /// summaries are our wording, listed under Copy to review; a step with a message of its own shows
+    /// that message instead of its summary. Migration TaskStages seeds the same values into existing
+    /// databases.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, (int Stage, string Label, string? Summary)> Tasks =
+        new Dictionary<string, (int, string, string?)>
+        {
+            ["references"] = (1, "Add your references", null),
+            ["qualifications"] = (2, "Send your license and degree documents", null),
+            ["offer"] = (3, "Accept your offer",
+                "Your recruiter will send your written offer. Review it and accept it to keep your onboarding moving."),
+            ["employee-data"] = (4, "Complete your employee information form", null),
+            ["background-check"] = (5, "Complete your background check",
+                "Complete the background check form. We'll let you know if anything else is needed."),
+            ["employee-health"] = (5, "Schedule your Employee Health appointment", null),
+            ["drug-screen"] = (5, "Complete your drug screen",
+                "Complete your drug screen at a testing location and time that works for you."),
+            ["i9"] = (5, "Complete your I-9", null),
+            ["i9-remote"] = (5, "Name your I-9 representative", null),
+            ["dmv"] = (5, "Complete the DMV Employer Pull Notice form", null),
+            ["fingerprinting"] = (5, "Schedule your fingerprinting", null),
+            ["position-description"] = (5, "Sign your position description", null),
+            ["parking"] = (5, "Claim your parking permit", null),
+            ["cleared"] = (6, "Complete your first-day forms", null),
+            ["new-employee-welcome"] = (7, "Schedule New Employee Welcome",
+                "New Employee Welcome introduces you to UC Davis Health. Choose a session within your first 30 days."),
+        };
+
+    private static List<StepDefinition> Definitions() =>
     [
         new()
         {
@@ -193,6 +234,13 @@ public static class JourneyCatalog
             Key = SettingKeys.FingerprintSchedulingUrl, Kind = SettingKind.Url,
             Description = "Link for scheduling fingerprinting with the UC Davis Health or Campus police department (message 12).",
             OpenQuestion = "SSO: provide the fingerprinting scheduling link (audit #12).",
+        },
+        new()
+        {
+            Key = SettingKeys.NewTaskEmailDelayMinutes, Value = "60", Kind = SettingKind.Integer,
+            Description = "Minutes a new employee must be away from their checklist before a task that just opened is emailed. "
+                + "Someone still in the checklist sees it there; a task they finish first is never emailed.",
+            OpenQuestion = "Communications: is an hour the right wait? (decided for the prototype 2026-10-26)",
         },
     ];
 

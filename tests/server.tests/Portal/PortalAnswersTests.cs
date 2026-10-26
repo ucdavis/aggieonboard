@@ -91,8 +91,10 @@ public class PortalAnswersTests : IAsyncLifetime
     public async Task The_choice_waits_for_message_11A()
     {
         var morgan = await Candidate("Morgan");
+        Step(morgan, "i9").Status = StepStatus.Upcoming;
+        await _db.SaveChangesAsync();
 
-        (await PortalStep("Morgan", "i9")).I9Choice.Should().BeNull();
+        (await Portal().GetViewAsync(morgan.Id))!.Steps.Should().NotContain(s => s.Key == "i9", "it hasn't opened");
         var choose = () => Answers().ChooseRemoteI9Async(morgan.Id);
         await choose.Should().ThrowAsync<JourneyRuleException>().WithMessage("You can choose how to verify your documents once we ask you to*");
         _email.Sent.Should().BeEmpty();

@@ -137,6 +137,30 @@ public sealed class PortalAnswers(AppDbContext db, TimeProvider clock, MessageSe
         await db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// "I've done this" for a task done in another system (the prototype's stand-in for that system
+    /// telling us). Moves the step to waiting; staff confirm it, and the last confirmation of a stage
+    /// opens the next.
+    /// </summary>
+    public async Task MarkDoneAsync(int candidateId, string key, CancellationToken ct = default)
+    {
+        var candidate = await LoadAsync(candidateId, ct);
+        var step = candidate.Steps.SingleOrDefault(s => s.Step!.Key == key && s.Status != StepStatus.Skipped);
+        if (step is null || key is I9Step or RemoteI9Step || await db.AppointmentTypes.AnyAsync(t => t.StepKey == key, ct))
+        {
+            throw new JourneyRuleException("This task is done right here in your checklist.");
+        }
+        if (step.Status == StepStatus.Waiting || step.Status == StepStatus.Complete) return;
+        if (step.Status != StepStatus.ActionNeeded)
+        {
+            throw new JourneyRuleException("This task isn't open yet. We'll let you know when it is.");
+        }
+
+        Audit(candidateId, "task.done", $"Marked “{(step.Step!.TaskLabel.Length > 0 ? step.Step.TaskLabel : step.Step.Title)}” done in the portal.");
+        MarkWaiting(candidateId, step);
+        await db.SaveChangesAsync(ct);
+    }
+
     /// <summary>In person or remote, until an in-person appointment is booked or remote is chosen. Switching back is for staff.</summary>
     private static bool CanChooseI9(Candidate candidate, IReadOnlyList<Appointment> appointments) =>
         candidate.I9Method != I9Method.Remote

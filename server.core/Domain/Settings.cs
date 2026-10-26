@@ -45,6 +45,9 @@ public static class SettingKeys
     public const string OehcFormUrl = "OehcFormUrl";
     public const string FingerprintSchedulingUrl = "FingerprintSchedulingUrl";
 
+    /// <summary>Minutes a new employee must be away from their checklist before a newly opened task is emailed.</summary>
+    public const string NewTaskEmailDelayMinutes = "NewTaskEmailDelayMinutes";
+
     public static readonly string[] All =
     [
         ClearanceBusinessDaysBeforeStart,
@@ -54,6 +57,7 @@ public static class SettingKeys
         EmployeeDataFormContact,
         OehcFormUrl,
         FingerprintSchedulingUrl,
+        NewTaskEmailDelayMinutes,
     ];
 }
 
