@@ -88,6 +88,8 @@ reach parity with.
   (`Candidate.LastPortalActivityAt`, set by `PortalActivityAttribute`). The portal lists only open and finished steps;
   `PortalStep.Kind` says how a task is done, and the task page shows the step's message via
   `MessageService.RenderForStepAsync` (a shared message keeps only that step's section).
+- Staff by group: `JourneyService.GetWorkAsync` is a group's work list (My work); the candidate page's
+  `JourneyTimeline` groups steps by `StepDefinition.Owner`. A step's owner group is who acts on it.
 - Candidate answers (the replies 11A, 11B and 12 used to ask for): `server.core/Portal/PortalAnswers.cs` decides what each
   step asks for and records the I-9 choice, the remote representative and the ATI number (`/api/portal/i9/*`,
   `/api/portal/fingerprinting/ati`). Staff enter the same answers on the candidate form; both use the checks in

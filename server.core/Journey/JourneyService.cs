@@ -40,6 +40,38 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
             .ToList();
     }
 
+    /// <summary>
+    /// Every open step a group owns, across active candidates, with who in the group is responsible
+    /// for each candidate. Steps waiting on staff come first, then overdue, then by due date.
+    /// </summary>
+    public async Task<WorkList> GetWorkAsync(StaffRole group, CancellationToken ct = default)
+    {
+        var now = clock.GetUtcNow();
+        var candidates = await WithJourney().Where(c => c.ArchivedAt == null).ToListAsync(ct);
+        var items = candidates
+            .SelectMany(c => c.Steps
+                .Where(s => s.Step!.Owner == group && s.Status is StepStatus.ActionNeeded or StepStatus.Waiting or StepStatus.Blocked)
+                .Select(s =>
+                {
+                    var assignee = group switch
+                    {
+                        StaffRole.Recruiter => c.Recruiter,
+                        StaffRole.UnitHr => c.UnitHr,
+                        _ => c.ServiceChannel,
+                    };
+                    return new WorkItem(
+                        c.Id, $"{c.FirstName} {c.LastName}", c.PositionTitle, s.Step!.Key, s.Step.Title, s.Status,
+                        s.Status is StepStatus.Waiting or StepStatus.Blocked, s.DueDate, s.DueTime,
+                        CandidateJourney.IsOverdue(s, now), s.ActivatedAt, assignee?.Id, assignee?.Name);
+                }))
+            .OrderByDescending(i => i.NeedsStaff)
+            .ThenByDescending(i => i.IsOverdue)
+            .ThenBy(i => i.DueDate ?? DateOnly.MaxValue)
+            .ThenBy(i => i.CandidateName)
+            .ToList();
+        return new WorkList(group, items);
+    }
+
     public async Task<CandidateDetail?> GetCandidateAsync(int id, CancellationToken ct = default)
     {
         var candidate = await WithJourney().SingleOrDefaultAsync(c => c.Id == id, ct);
@@ -362,7 +394,7 @@ public sealed partial class JourneyService(AppDbContext db, TimeProvider clock, 
                 DescribeRule(s.Step.Deadline, clearanceDays), s.Step.DeadlineConfirmed, s.Step.DeadlineQuestion,
                 s.Step.WatchForSender, s.Step.RequestMessageKey, s.Step.AcknowledgmentMessageKey, s.Step.VendorMessageKey,
                 s.CompletedAt, s.CompletedBy?.Name, s.StaffNote,
-                CandidateJourney.AllowedActions(s.Status))).ToList(),
+                CandidateJourney.AllowedActions(s.Status), s.Step.Stage)).ToList(),
             history,
             await messages.GetSentAsync(c.Id, ct),
             await db.CandidateAccessTokens.Where(t => t.CandidateId == c.Id).MaxAsync(t => t.ConsumedAt, ct),

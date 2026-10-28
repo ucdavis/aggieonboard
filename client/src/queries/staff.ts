@@ -92,6 +92,8 @@ export type StepDetail = {
   phase: JourneyPhase;
   requestMessageKey: string | null;
   staffNote: string | null;
+  /** Steps with the same stage open together; the next opens when one finishes. */
+  stage: number;
   status: StepStatus;
   title: string;
   vendorMessageKey: string | null;
@@ -197,6 +199,38 @@ export const staffKeys = {
   members: () => ['staff', 'members'] as const,
   pipeline: (mine: boolean) => ['staff', 'pipeline', { mine }] as const,
 };
+
+/** One open step on a group's work list (JourneyService.GetWorkAsync). */
+export type WorkItem = {
+  activatedAt: string | null;
+  assigneeId: number | null;
+  assigneeName: string | null;
+  candidateId: number;
+  candidateName: string;
+  dueDate: string | null;
+  dueTime: string | null;
+  isOverdue: boolean;
+  /** The new employee has done their part (or it's blocked): the group's move. */
+  needsStaff: boolean;
+  positionTitle: string;
+  status: StepStatus;
+  stepKey: string;
+  stepTitle: string;
+};
+
+export type WorkList = {
+  group: StaffRole;
+  items: WorkItem[];
+  meId: number | null;
+};
+
+/** A group's open steps; without a group, the signed-in person's own. */
+export const workQueryOptions = (group?: StaffRole) =>
+  queryOptions({
+    queryFn: () =>
+      fetchJson<WorkList>(`/api/staff/work${group ? `?group=${group}` : ''}`),
+    queryKey: ['staff', 'work', group ?? 'mine'] as const,
+  });
 
 export const pipelineQueryOptions = (mine: boolean) =>
   queryOptions({

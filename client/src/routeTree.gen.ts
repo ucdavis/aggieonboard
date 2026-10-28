@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root';
 import { Route as authenticatedRouteRouteImport } from './routes/(authenticated)/route';
 import { Route as authenticatedIndexRouteImport } from './routes/(authenticated)/index';
 import { Route as authenticatedAdminRouteRouteImport } from './routes/(authenticated)/admin/route';
+import { Route as authenticatedWorkRouteImport } from './routes/(authenticated)/work';
 import { Route as CTokenRouteImport } from './routes/c/$token';
 import { Route as PortalIndexRouteImport } from './routes/portal/index';
 import { Route as PortalLinkRouteImport } from './routes/portal/link';
@@ -42,6 +43,11 @@ const authenticatedIndexRoute = authenticatedIndexRouteImport.update({
 const authenticatedAdminRouteRoute = authenticatedAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => authenticatedRouteRoute,
+} as any);
+const authenticatedWorkRoute = authenticatedWorkRouteImport.update({
+  id: '/work',
+  path: '/work',
   getParentRoute: () => authenticatedRouteRoute,
 } as any);
 const CTokenRoute = CTokenRouteImport.update({
@@ -142,6 +148,7 @@ const authenticatedScheduleLocationsLocationIdRoute =
 
 export interface FileRoutesByFullPath {
   '/admin': typeof authenticatedAdminRouteRouteWithChildren;
+  '/work': typeof authenticatedWorkRoute;
   '/c/$token': typeof CTokenRoute;
   '/portal/link': typeof PortalLinkRoute;
   '/': typeof authenticatedIndexRoute;
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/candidates/$candidateId/': typeof authenticatedCandidatesCandidateIdIndexRoute;
 }
 export interface FileRoutesByTo {
+  '/work': typeof authenticatedWorkRoute;
   '/c/$token': typeof CTokenRoute;
   '/portal/link': typeof PortalLinkRoute;
   '/': typeof authenticatedIndexRoute;
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   '/(authenticated)': typeof authenticatedRouteRouteWithChildren;
   '/(authenticated)/admin': typeof authenticatedAdminRouteRouteWithChildren;
+  '/(authenticated)/work': typeof authenticatedWorkRoute;
   '/c/$token': typeof CTokenRoute;
   '/portal/link': typeof PortalLinkRoute;
   '/(authenticated)/': typeof authenticatedIndexRoute;
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | '/admin'
+    | '/work'
     | '/c/$token'
     | '/portal/link'
     | '/'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/candidates/$candidateId/';
   fileRoutesByTo: FileRoutesByTo;
   to:
+    | '/work'
     | '/c/$token'
     | '/portal/link'
     | '/'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/(authenticated)'
     | '/(authenticated)/admin'
+    | '/(authenticated)/work'
     | '/c/$token'
     | '/portal/link'
     | '/(authenticated)/'
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/admin';
       fullPath: '/admin';
       preLoaderRoute: typeof authenticatedAdminRouteRouteImport;
+      parentRoute: typeof authenticatedRouteRoute;
+    };
+    '/(authenticated)/work': {
+      id: '/(authenticated)/work';
+      path: '/work';
+      fullPath: '/work';
+      preLoaderRoute: typeof authenticatedWorkRouteImport;
       parentRoute: typeof authenticatedRouteRoute;
     };
     '/c/$token': {
@@ -454,6 +473,7 @@ const authenticatedAdminRouteRouteWithChildren =
 
 interface authenticatedRouteRouteChildren {
   authenticatedAdminRouteRoute: typeof authenticatedAdminRouteRouteWithChildren;
+  authenticatedWorkRoute: typeof authenticatedWorkRoute;
   authenticatedIndexRoute: typeof authenticatedIndexRoute;
   authenticatedCandidatesNewRoute: typeof authenticatedCandidatesNewRoute;
   authenticatedScheduleIndexRoute: typeof authenticatedScheduleIndexRoute;
@@ -464,6 +484,7 @@ interface authenticatedRouteRouteChildren {
 
 const authenticatedRouteRouteChildren: authenticatedRouteRouteChildren = {
   authenticatedAdminRouteRoute: authenticatedAdminRouteRouteWithChildren,
+  authenticatedWorkRoute: authenticatedWorkRoute,
   authenticatedIndexRoute: authenticatedIndexRoute,
   authenticatedCandidatesNewRoute: authenticatedCandidatesNewRoute,
   authenticatedScheduleIndexRoute: authenticatedScheduleIndexRoute,

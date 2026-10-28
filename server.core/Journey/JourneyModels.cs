@@ -80,7 +80,30 @@ public sealed record StepDetail(
     DateTimeOffset? CompletedAt,
     string? CompletedBy,
     string? StaffNote,
-    IReadOnlyList<StepAction> AvailableActions);
+    IReadOnlyList<StepAction> AvailableActions,
+    int Stage = 0);
+
+/// <summary>
+/// One open step on a group's work list. <see cref="NeedsStaff"/>: the new employee has done their part
+/// (or it's blocked) and the group's move is next; otherwise it's with the new employee.
+/// </summary>
+public sealed record WorkItem(
+    int CandidateId,
+    string CandidateName,
+    string PositionTitle,
+    string StepKey,
+    string StepTitle,
+    StepStatus Status,
+    bool NeedsStaff,
+    DateOnly? DueDate,
+    TimeOnly? DueTime,
+    bool IsOverdue,
+    DateTimeOffset? ActivatedAt,
+    int? AssigneeId,
+    string? AssigneeName);
+
+/// <remarks><see cref="MeId"/> is the signed-in staff member, so the list can put their own candidates first.</remarks>
+public sealed record WorkList(StaffRole Group, IReadOnlyList<WorkItem> Items, int? MeId = null);
 
 public sealed record HistoryEntry(DateTimeOffset At, string ActorName, string Action, string Detail);
 

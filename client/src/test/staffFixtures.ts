@@ -73,6 +73,7 @@ export const step = (overrides: Partial<StepDetail> = {}): StepDetail => ({
   phase: 'TalentAcquisition',
   requestMessageKey: 'references-request',
   staffNote: null,
+  stage: 1,
   status: 'Upcoming',
   title: 'Reference check',
   vendorMessageKey: 'skillsurvey-request',

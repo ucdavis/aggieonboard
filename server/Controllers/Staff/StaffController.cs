@@ -29,6 +29,20 @@ public class StaffController(JourneyService journey, MessageService messages, Sc
         return me is null ? Forbid() : Ok(await journey.GetPipelineAsync(me.Id, ct));
     }
 
+    /// <summary>
+    /// A group's open steps. Without <c>group</c>, the signed-in person's own group; any journey staff
+    /// member may look at another group's list.
+    /// </summary>
+    [HttpGet("work")]
+    public async Task<ActionResult<WorkList>> Work([FromQuery] StaffRole? group, CancellationToken ct)
+    {
+        var me = await users.GetStaffMemberAsync(User, ct);
+        if (me is null) return Forbid();
+        var chosen = group ?? (me.Role == StaffRole.TeamMember ? StaffRole.ServiceChannel : me.Role);
+        if (chosen == StaffRole.TeamMember) return BadRequest();
+        return await journey.GetWorkAsync(chosen, ct) with { MeId = me.Id };
+    }
+
     [HttpGet("candidates/{id:int}")]
     public async Task<ActionResult<CandidateDetail>> Candidate(int id, CancellationToken ct) =>
         await journey.GetCandidateAsync(id, ct) is { } detail ? detail : NotFound();

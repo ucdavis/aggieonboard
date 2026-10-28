@@ -7,31 +7,28 @@ import {
   formatTimestamp,
   i9Label,
   messageLabel,
-  phaseLabel,
 } from '@/lib/journey.ts';
 import {
   candidateQueryOptions,
   type CandidateDetail,
-  type JourneyPhase,
 } from '@/queries/staff.ts';
 import {
   MessagePreviewDialog,
   SentMessageDialog,
 } from '@/shared/staff/MessageDialogs.tsx';
 import { Appointments } from '@/shared/staff/Appointments.tsx';
-import { StepRow } from '@/shared/staff/StepRow.tsx';
+import { JourneyTimeline } from '@/shared/staff/JourneyTimeline.tsx';
+
+type CandidateSearch = { step?: string };
 
 export const Route = createFileRoute(
   '/(authenticated)/candidates/$candidateId/'
 )({
   component: CandidatePage,
+  validateSearch: (search: Record<string, unknown>): CandidateSearch => ({
+    step: typeof search.step === 'string' ? search.step : undefined,
+  }),
 });
-
-const phases: JourneyPhase[] = [
-  'TalentAcquisition',
-  'PreEmployment',
-  'FirstDay',
-];
 
 const requirementLabels: Record<keyof CandidateDetail['requirements'], string> =
   {
@@ -44,6 +41,7 @@ const requirementLabels: Record<keyof CandidateDetail['requirements'], string> =
 
 function CandidatePage() {
   const id = Number(Route.useParams().candidateId);
+  const { step: focus } = Route.useSearch();
   const {
     data: candidate,
     error,
@@ -107,19 +105,8 @@ function CandidatePage() {
           <h2 className="sr-only" id="journey-heading">
             Journey
           </h2>
+          <JourneyTimeline candidate={candidate} focus={focus} />
           <Appointments candidateId={id} />
-          {phases.map((phase) => (
-            <div className="space-y-3" key={phase}>
-              <h3 className="text-lg font-semibold">{phaseLabel[phase]}</h3>
-              <ol className="space-y-3">
-                {candidate.steps
-                  .filter((step) => step.phase === phase)
-                  .map((step) => (
-                    <StepRow candidateId={id} key={step.key} step={step} />
-                  ))}
-              </ol>
-            </div>
-          ))}
         </section>
 
         <aside className="space-y-6">

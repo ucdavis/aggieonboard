@@ -73,6 +73,22 @@ public class JourneyServiceTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_groups_work_lists_its_open_steps_with_staff_moves_first_and_who_is_responsible()
+    {
+        var work = await _journey.GetWorkAsync(StaffRole.ServiceChannel);
+
+        work.Items.Should().NotBeEmpty().And.OnlyContain(i => i.Status != StepStatus.Complete && i.Status != StepStatus.Upcoming);
+        work.Items.Select(i => i.StepKey).Should().NotContain(["references", "offer", "employee-data", "new-employee-welcome"]);
+        work.Items.SkipWhile(i => i.NeedsStaff).Should().OnlyContain(i => !i.NeedsStaff, "staff moves come first");
+        work.Items.Single(i => i.CandidateName == "Casey Brooks" && i.StepKey == "dmv")
+            .Should().Match<WorkItem>(i => i.NeedsStaff && i.AssigneeName == "Pat Kim");
+        work.Items.Where(i => i.CandidateName == "Morgan Chen").Should().OnlyContain(i => i.AssigneeName == "Sample User");
+
+        (await _journey.GetWorkAsync(StaffRole.Recruiter)).Items.Select(i => i.StepKey).Distinct()
+            .Should().BeSubsetOf(["references", "qualifications", "offer", "employee-data"]);
+    }
+
+    [Fact]
     public async Task Creating_a_candidate_lays_out_the_journey_and_records_who_did_it()
     {
         var ra = await _db.Staff.FirstAsync(s => s.Role == StaffRole.Recruiter);

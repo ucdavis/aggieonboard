@@ -14,6 +14,12 @@ import {
 const stepCard = (title: string) =>
   screen.getByRole('listitem', { name: new RegExp(title) });
 
+/** Steps are lines on the timeline; clicking one opens its details. */
+const openStep = (title: string) =>
+  userEvent.click(
+    screen.getByRole('button', { name: new RegExp(`^${title}`) })
+  );
+
 describe('candidate route', () => {
   it('shows each step with its rule, open question, and the moves it allows', async () => {
     server.use(
@@ -28,6 +34,10 @@ describe('candidate route', () => {
         await screen.findByRole('heading', { name: 'Alex Rivera' })
       ).toBeInTheDocument();
 
+      expect(
+        screen.getByRole('button', { name: /^Recruiter/ })
+      ).toHaveAttribute('aria-expanded', 'true');
+      await openStep('Reference check');
       const references = stepCard('Reference check');
       expect(within(references).getByText('Upcoming')).toBeInTheDocument();
       expect(within(references).getByText('Unconfirmed')).toBeInTheDocument();
@@ -40,9 +50,16 @@ describe('candidate route', () => {
         within(references).getByRole('button', { name: 'Start' })
       ).toBeInTheDocument();
 
+      await userEvent.click(
+        screen.getByRole('button', { name: /^Service Channel/ })
+      );
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Not needed for this position (1)' })
+      );
+      await openStep('Drug screen');
       const drug = stepCard('Drug screen');
       expect(within(drug).getByText("Doesn't apply")).toBeInTheDocument();
-      expect(within(drug).queryByRole('button')).not.toBeInTheDocument();
+      expect(within(drug).getAllByRole('button')).toHaveLength(1);
     } finally {
       cleanup();
     }
@@ -85,6 +102,7 @@ describe('candidate route', () => {
     const { cleanup } = renderRoute({ initialPath: '/candidates/1' });
     try {
       await screen.findByRole('heading', { name: 'Alex Rivera' });
+      await openStep('Reference check');
       await userEvent.click(
         within(stepCard('Reference check')).getByRole('button', {
           name: 'Start',
@@ -125,6 +143,7 @@ describe('candidate route', () => {
     const { cleanup } = renderRoute({ initialPath: '/candidates/1' });
     try {
       await screen.findByRole('heading', { name: 'Alex Rivera' });
+      await openStep('Reference check');
       await userEvent.click(
         within(stepCard('Reference check')).getByRole('button', {
           name: 'Start',

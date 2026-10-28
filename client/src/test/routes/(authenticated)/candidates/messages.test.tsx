@@ -13,6 +13,9 @@ import {
 
 const openPreview = async () => {
   await screen.findByRole('heading', { name: 'Alex Rivera' });
+  await userEvent.click(
+    screen.getByRole('button', { name: /^Reference check/ })
+  );
   const references = screen.getByRole('listitem', { name: /Reference check/ });
   await userEvent.click(
     within(references).getByRole('button', { name: 'Preview message' })
@@ -133,6 +136,9 @@ describe('candidate messages', () => {
     const { cleanup } = renderRoute({ initialPath: '/candidates/1' });
     try {
       await screen.findByRole('heading', { name: 'Alex Rivera' });
+      await userEvent.click(
+        screen.getByRole('button', { name: /^Reference check/ })
+      );
       const references = screen.getByRole('listitem', {
         name: /Reference check/,
       });

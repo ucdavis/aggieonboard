@@ -41,6 +41,13 @@ export function StaffLayout() {
             {journey && (
               <>
                 <Link
+                  activeOptions={{ includeSearch: false }}
+                  activeProps={{ className: 'underline underline-offset-4' }}
+                  to="/work"
+                >
+                  My work
+                </Link>
+                <Link
                   activeOptions={{ exact: true, includeSearch: false }}
                   activeProps={{ className: 'underline underline-offset-4' }}
                   to="/"

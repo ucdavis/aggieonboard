@@ -1,6 +1,6 @@
 # AggieOnboard: candidate onboarding guide — prototype plan
 
-> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). In progress: the one-place redesign (see "Redesign: groups, stages, one place"); steps 1–5 done, next the staff timeline by group. Then Phase 7 (hosting).**
+> **STATUS 2026-10-26 — Phases 0–6 done. Public at github.com/ucdavis/aggieonboard (template history kept; `upstream` remote). The one-place redesign (see "Redesign: groups, stages, one place") is built; next, working through each role. Then Phase 7 (hosting).**
 > Built on `ucdavis/web-app-template` (same stack as jdwriter-app), greenfield — there is no POC.
 > Sources (in `Reference/`, gitignored): `TA_SSO Onboarding Communications.docx` (the 14 rewritten
 > messages) and `Communications Needs_gdoc.docx` (the audit: sender, timing, changes, open "Needs" per message).
@@ -418,7 +418,14 @@ sends its own message, several send one "new steps" email listing them, and a ta
 to do it: booking, the I-9 choice, the representative and the ATI number happen right there; a task done in another
 system opens a stand-in and **I've done this** (it moves to waiting; staff confirm). Finishing returns home with
 "Done: … Next up: …". Verified on the sandbox: completing Taylor's employee data form opened stage 5, and with the
-delay at 0 one "Next steps" email listed its three tasks; (6) the staff timeline by group.
+delay at 0 one "Next steps" email listed its three tasks; (6) ✅ the staff side by group: the candidate page is a
+timeline per group (Recruiter, Service Channel, Unit HR) with who is responsible and "n of m done"; the current group
+is open, finished and later ones fold away, and steps that don't apply are tucked under "Not needed". Each step is a
+line ("With the new employee · due …", "Waiting on Service Channel to confirm", "Done …") that opens to its details
+and moves; steps waiting on staff open on their own. **My work** (`/work`, `GET /api/staff/work`) lists a group's open
+steps across candidates, clustered by the responsible person (you first): "Needs {group}" (the new employee has done
+their part, or it's blocked), then "With new employees" (overdue first). Each item opens the candidate's timeline at
+that step (`?step=`); any journey staff member can switch groups.
 
 **Phase 7: Pilot readiness.** Accessibility pass, `/security-review`, and Azure deploy via the template's
 GitHub Actions + Bicep. These need **user-only prerequisites**: a new Entra app registration (not
